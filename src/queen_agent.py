@@ -48,7 +48,7 @@ def main(args=None):
        readout.createCustomCombFilesFromCurrentComb)
     rt('modifyCustomCombAmps', readout.modifyCustomCombAmps)
     rt('writeTargCombFromCustomList', readout.writeTargCombFromCustomList)
-    rt('vnaSweep', readout.vnaSweep)
+    rt('vnaSweep', readout.vnaSweep, b=False)
     rt('targetSweep', readout.targetSweep)
     rt('customSweep', readout.customSweep)
     rt('findVnaResonators', readout.findVnaResonators)
