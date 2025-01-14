@@ -59,8 +59,6 @@ def safe_cast_to_int(data_str):
 # timestreamOn
 def timestreamOn(on=True):
     '''Turn the UDP timestream on (or off) for the current drone.'''
-    
-    import time
 
     # input parameter casting
     on = str(on) in {True, 1, '1', 'True', 'true'}
@@ -69,24 +67,15 @@ def timestreamOn(on=True):
     
     # current drone channel
     chan = cfg_b.drid
-    chan_bit = 1 << (chan - 1)  # in hex
 
-    # chan dependent delay instead of resource locking
-    delay_factor = 0.1 # in seconds
-    time.sleep(chan*delay_factor - delay_factor)
+    # bit values for this drone (01 for on, 10 for off)
+    val = 0b01 if on else 0b10
 
-    # get the current udp control state
-    current_state = udp_control.read(0x00)
+    # construct the 8-bit register value with all zeros except for this drone
+    reg_value = val << ((chan - 1) * 2)
 
-    # determine new state from channel, on/off status, and current state
-    if on:
-        new_state = current_state | chan_bit
-    else:
-        new_state = current_state & ~chan_bit
-
-    # 0x00 offset 4 bit binary for UDP on/off lsb is chan 1 msb chan 4
-    # e.g. udp_control.write(0x04, 1) turns on only chan 3
-    udp_control.write(0x00, new_state)
+    # Write the new register value
+    udp_control.write(0x00, reg_value)
 
 
 # ============================================================================ #
