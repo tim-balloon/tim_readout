@@ -18,6 +18,7 @@ services:
       - INSTANCE_ID=queenagent
       - SITE_HUB=ws://127.0.0.1:8001/ws
       - SITE_HTTP=http://127.0.0.1:8001/call
+      - CROSSBAR_TIMEOUT=120
     volumes: #outside:inside
       - /home/player1/ocs-site-configs/:/config       # OCS config files
       - /home/player1/primecam_readout/cfg:/cfg       # primecam_readout config
