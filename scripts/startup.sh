@@ -1,5 +1,16 @@
 #!/bin/bash
-# This is the startup script for CCATpHive.
 
-# TODO: we just need to run init_multi.py right?
-# and then add this as a startup script
+# Switch to superuser
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root."
+    exit
+fi
+
+# Navigate to the init script directory
+cd /user/xilinx/primecam_readout/scripts/
+
+# Activate the environment
+source activate
+
+# Execute the Python initialization script
+python3 init.py

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd /home/xilinx
+
+set -a
+. /etc/environment
+set +a
+
+for f in /etc/profile.d/*.sh; do source $f; done
