@@ -10,12 +10,6 @@ fi
 ACTIVATE_SCRIPT="/home/xilinx/primecam_readout/scripts/activate"
 INIT_SCRIPT="/home/xilinx/primecam_readout/init/init.py"
 
-# Ensure the scripts directory exists
-if [ ! -d "$SCRIPTS_DIR" ]; then
-    echo "Error: Scripts directory does not exist: $SCRIPTS_DIR"
-    exit 1
-fi
-
 # Ensure the activate script exists
 if [ ! -f "$ACTIVATE_SCRIPT" ]; then
     echo "Error: Activate script does not exist: $ACTIVATE_SCRIPT"
