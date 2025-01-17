@@ -3,9 +3,13 @@ Description=Board startup script
 After=network.target
 
 [Service]
+Type=oneshot
 ExecStart=/home/xilinx/primecam_readout/scripts/startup_board.sh
-Restart=always
-User=xilinx
+StandardOutput=journal
+StandardError=journal
+User=root
+Group=root
+RemainAfterExit=true
 WorkingDirectory=/home/xilinx/primecam_readout/scripts
 
 [Install]
