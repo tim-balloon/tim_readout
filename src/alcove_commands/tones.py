@@ -12,6 +12,58 @@ except ImportError: cfg_b = None
 
 
 # ============================================================================ #
+# setAccumLength
+def setAccumLength(chan):
+    if chan == 1:
+        dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
+    elif chan == 2:
+        dsp_regs = cfg_b.firmware.chan2.dsp_regs_0
+    elif chan == 3:
+        dsp_regs = cfg_b.firmware.chan3.dsp_regs_0
+    elif chan == 4:
+        dsp_regs = cfg_b.firmware.chan4.dsp_regs_0
+    else:
+        return "Does not compute"
+    accum_length = cfg_b.accum_len # 2**19-1
+    dsp_regs.write(0x08, accum_length)
+
+
+# ============================================================================ #
+# _resetAccumAndSync
+def _resetAccumAndSync(chan, freqs):
+    if chan == 1:
+        dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
+    elif chan == 2:
+        dsp_regs = cfg_b.firmware.chan2.dsp_regs_0
+    elif chan == 3:
+        dsp_regs = cfg_b.firmware.chan3.dsp_regs_0
+    elif chan == 4:
+        dsp_regs = cfg_b.firmware.chan4.dsp_regs_0
+    else:
+        return "Does not compute"
+    # dsp_regs bitfield map
+    # 0x00 -  fft_shift[9 downto 0], load_bins[22 downto 12], lut_counter_rst[11 downto 11]
+    # 0x04 -  bin_num[9 downto 0]
+    # 0x08 -  accum_len[23 downto 0], accum_rst[24 downto 24], sync_in[26 downto 26] (start dac)
+    # 0x0c -  dds_shift[8 downto 0]
+    # initialization
+    sync_in = 2**26
+    accum_rst = 2**24  # (active rising edge)
+    accum_length = cfg_b.accum_len # 2**19-1
+    fft_shift=0
+    if len(freqs)<400:
+        fft_shift = 2**9-1 #2**9-1
+    else:
+        fft_shift = 2**5-1 #2**2-1
+    dsp_regs.write(0x00, fft_shift) # set fft shift
+    ########################
+    dsp_regs.write(0x08, accum_length | sync_in)
+    dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
+    dsp_regs.write(0x0c, 180) # 260)
+    return
+
+
+# ============================================================================ #
 # _loadBinList
 def _loadBinList(chan, freq_list):
 
@@ -62,42 +114,6 @@ def _loadBinList(chan, freq_list):
             dsp_regs.write(0x04, 0)
             dsp_regs.write(0x00, ((addr<<1)+1)<<12)
             dsp_regs.write(0x00, 0)
-    return
-
-
-# ============================================================================ #
-# _resetAccumAndSync
-def _resetAccumAndSync(chan, freqs):
-    if chan == 1:
-        dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
-    elif chan == 2:
-        dsp_regs = cfg_b.firmware.chan2.dsp_regs_0
-    elif chan == 3:
-        dsp_regs = cfg_b.firmware.chan3.dsp_regs_0
-    elif chan == 4:
-        dsp_regs = cfg_b.firmware.chan4.dsp_regs_0
-    else:
-        return "Does not compute"
-    # dsp_regs bitfield map
-    # 0x00 -  fft_shift[9 downto 0], load_bins[22 downto 12], lut_counter_rst[11 downto 11] 
-    # 0x04 -  bin_num[9 downto 0]
-    # 0x08 -  accum_len[23 downto 0], accum_rst[24 downto 24], sync_in[26 downto 26] (start dac)
-    # 0x0c -  dds_shift[8 downto 0]
-    # initialization
-    sync_in = 2**26
-    accum_rst = 2**24  # (active rising edge)
-    accum_length = (2**19)-1
-    
-    fft_shift=0
-    if len(freqs)<400:
-        fft_shift = 2**9-1 #2**9-1
-    else:
-        fft_shift = 2**5-1 #2**2-1
-    dsp_regs.write(0x00, fft_shift) # set fft shift
-    ########################
-    dsp_regs.write(0x08, accum_length | sync_in)
-    dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
-    dsp_regs.write(0x0c, 180) # 260)
     return
 
 
