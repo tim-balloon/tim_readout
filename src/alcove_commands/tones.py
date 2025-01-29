@@ -13,7 +13,10 @@ except ImportError: cfg_b = None
 
 # ============================================================================ #
 # setAccumLength
-def setAccumLength(chan):
+def setAccumLength():
+
+    chan = cfg_b.drid
+
     if chan == 1:
         dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
     elif chan == 2:
