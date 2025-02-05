@@ -420,7 +420,7 @@ def stopDrone(bid, drid, drone_list=None, check=False, timeout=None, r=None):
     '''Stop the drone bid.drid if running.
     '''
 
-    drone_list, drone_props = _droneListAndProps(bid, drid, drone_list, r=None)
+    drone_list, drone_props = _droneListAndProps(bid, drid, drone_list)
     
     # check for drone in master list
     if drone_props is None:
