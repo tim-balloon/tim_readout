@@ -649,7 +649,7 @@ class ReadoutAgent:
         """
   
         com_args = ''
-        com_args += f'peak_prom_std={params["stitch_bw"]}, '
+        com_args += f'peak_prom_std={params["peak_prom_std"]}, '
         com_args += f'peak_prom_db={params["peak_prom_db"]}, '
         com_args += f'peak_dis={params["peak_dis"]}, '
         com_args += f'width_min={params["width_min"]}, '
