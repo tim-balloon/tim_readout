@@ -15,11 +15,13 @@
 import os
 import sys
 import redis
+import queue
 import shutil
 import pickle
 import logging
 import argparse
 import importlib
+import threading
 
 
 import alcove
@@ -60,10 +62,11 @@ def main():
     r,p = connectRedis()
     r.client_setname(f'drone_{cfg_b.bid}.{cfg_b.drid}')
 
-    print(f"Drone {cfg_b.bid}.{cfg_b.drid} is running...")
+    print(f"Drone {cfg_b.bid}.{cfg_b.drid} is running...")    
 
     # run loop
-    listenMode(r, p, chans.subList(cfg_b.bid, cfg_b.drid))
+    command_queue = queue.Queue()
+    listenMode(r, p, chans.subList(cfg_b.bid, cfg_b.drid), command_queue)
 
             
 
@@ -189,40 +192,91 @@ def connectRedis():
 
 
 # ============================================================================ #
-# listenMode
-def listenMode(r, p, chan_subs):
-    p.psubscribe(chan_subs)             # channels to listen to
+# Execution Thread
+def execute_commands(r, command_queue):
+    '''Processes commands one by one
+    '''
 
-    last_chan_str = ''
-
-    for new_message in p.listen():      # infinite listening loop
-        # print(new_message)
-
-        # check this is a command
-        if new_message['type'] != 'pmessage':
-            continue
-
-        # get channel string (unique to command)
-        chan_str = new_message['channel'].decode('utf-8')
-        # cid = chan_sub.split('_')[-1]    # recover cid from channel
-
-        # check we haven't already processed this message
-        # e.g. could have come through on another channel
-        if chan_str == last_chan_str:
-            continue
-        last_chan_str = chan_str
-
-        payload = new_message['data'].decode('utf-8')
+    while True:
+        chan_str, payload = command_queue.get()  # Get next command from queue
         try:
             com_num, ret_data, args, kwargs = payloadToCom(payload)
-            # print(com_num, args, kwargs)
             com_ret = executeCommand(com_num, ret_data, args, chan_str, kwargs)
         except Exception as e:
             com_ret = f"Payload error ({payload}): {e}"
             print(com_ret)
         
-        # publishResponse(com_ret, r, bid, cid) # send response
-        publishResponse(com_ret, r, chan_str) # send response
+        publishResponse(com_ret, r, chan_str)  # Send response
+        command_queue.task_done()
+
+
+# ============================================================================ #
+# Listener Function
+def listenMode(r, p, chan_subs, command_queue):
+    '''
+    '''
+
+    p.psubscribe(chan_subs)  # Subscribe to channels
+
+    last_chan_str = ''
+
+    # Start execution thread
+    threading.Thread(
+        target=execute_commands, args=(r,command_queue), daemon=True
+        ).start()
+
+    # Main loop: listens for messages and adds them to the queue
+    for new_message in p.listen():
+        if new_message['type'] != 'pmessage':
+            continue  # Ignore non-command messages
+
+        chan_str = new_message['channel'].decode('utf-8')
+
+        if chan_str == last_chan_str: # command unique
+            continue  # Prevent duplicate processing
+        last_chan_str = chan_str
+
+        payload = new_message['data'].decode('utf-8')
+
+        # Queue the command for execution
+        command_queue.put((chan_str, payload))
+
+
+# ============================================================================ #
+# listenMode
+# def listenMode(r, p, chan_subs):
+#     p.psubscribe(chan_subs)             # channels to listen to
+
+#     last_chan_str = ''
+
+#     for new_message in p.listen():      # infinite listening loop
+#         # print(new_message)
+
+#         # check this is a command
+#         if new_message['type'] != 'pmessage':
+#             continue
+
+#         # get channel string (unique to command)
+#         chan_str = new_message['channel'].decode('utf-8')
+#         # cid = chan_sub.split('_')[-1]    # recover cid from channel
+
+#         # check we haven't already processed this message
+#         # e.g. could have come through on another channel
+#         if chan_str == last_chan_str:
+#             continue
+#         last_chan_str = chan_str
+
+#         payload = new_message['data'].decode('utf-8')
+#         try:
+#             com_num, ret_data, args, kwargs = payloadToCom(payload)
+#             # print(com_num, args, kwargs)
+#             com_ret = executeCommand(com_num, ret_data, args, chan_str, kwargs)
+#         except Exception as e:
+#             com_ret = f"Payload error ({payload}): {e}"
+#             print(com_ret)
+        
+#         # publishResponse(com_ret, r, bid, cid) # send response
+#         publishResponse(com_ret, r, chan_str) # send response
 
 
 # ============================================================================ #
