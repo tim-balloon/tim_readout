@@ -286,7 +286,7 @@ def executeCommand(com_num, ret_data, args, chan_str, kwargs):
     ret_data: (bool) Whether to return data from command func.
     '''
 
-    print(f"Exe com {com_num} (chan: {chan_str} args={args})")
+    print(f"Exe (threaded) com {com_num} (chan: {chan_str} args={args})")
 
     # execute the command
     try:
