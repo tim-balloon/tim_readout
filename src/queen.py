@@ -90,7 +90,7 @@ def comNumFromStr(com_str):
 # ============================================================================ #
 #  alcoveCommand
 def alcoveCommand(com_num, bid=None, drid=None, all_boards=False, 
-                  args=None, ret_data=True):
+                  args=None, ret_data=True, list_bid_drids=None):
     '''Send an alcove command to given board[s].
 
     com_num: (int) Command number.
@@ -99,21 +99,35 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
     all_boards: (bool) Send to all boards instead of bid/drid. Overrides bid.
     args: (str) Command arguments.
     ret_data: (bool) Whether the board should return data or be silent.
+    list_bid_drids: (list) List of bid.drids to send command to.
+
+    Note: Precedence: all_boards > list_bid_drids > bid.drid > bid
     
     Return: 2-tuples (num_clients, ret_dict)
         num_clients: (int) Number of clients that received the command.
         ret_dict: (dict/None) Conglomerate return dictionary from all clients.
     '''
 
-    to_str = "all boards" if all_boards else f"{bid}.{drid}" if drid else f"board {bid}"
-    print(f"Attempting to send command ({com_num}) to {to_str} with args={args}.")
+    # attempt statement
+    if all_boards:
+        to_str = "all boards"
+    elif list_bid_drids:
+        to_str = "list"
+    elif drid:
+        to_str = f"{bid}.{drid}"
+    else:
+        to_str = f"board {bid}"
+    print(f"Command attempt: ({com_num}) to {to_str} with args={args}.")
 
-    if not all_boards and not bid:
-        print("Command not sent: bid required if not sending to all boards.")
+    # check chan input is validish
+    if not all_boards and not list_bid_drids and not bid:
+        print("Command not sent: Who am I sending it to?")
         return (0,[])
 
-    # all_boards overrides bid and drid
+    # enforce precedence
     if all_boards:
+        bid, drid, list_bid_drids = None, None, None
+    elif list_bid_drids:
         bid, drid = None, None
 
     r,p = _connectRedis()
@@ -121,23 +135,37 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
     # build payload for drone[s]
     payload = f'{com_num} {int(ret_data)}' # ret_data: bool->int->str
     payload += '' if args is None else f' {args}'
-    # payload = f'{com_num}' if args is None else f'{com_num} {args}'
 
-    # build Redis command channels
-    chan = chans.comChan(bid, drid)
-        
-    # subscribe for returns
-    p.psubscribe(chan.subRet)
+    # send command to a single chan
+    def sendCom(bid, drid): # generic alcove command algorithm: 
+        chan = chans.comChan(bid, drid)            # get pub/sub chans
+        p.psubscribe(chan.subRet)                  # subscribe to returns
+        num_clients = r.publish(chan.pub, payload) # publish command
+        return num_clients
+    
+    num_clients = 0
 
-    # send the command
-    num_clients = r.publish(chan.pub, payload) # send command
+    # send command to all clients in list
+    if list_bid_drids:
+        for bid_drid in list_bid_drids:
+            bid, drid = _bid_drid(bid_drid)
+            if drid: # don't allow just bid for list method
+                num_clients += sendCom(bid, drid)
+            else:
+                print(f"List item ({bid_drid}) invalid: Require drid.")
+
+    # send command to all_boards 
+    # or specified bid[.drid]
+    else:
+        num_clients += sendCom(bid, drid)
+
+    # number of clients that received command
     if num_clients == 0:
         print(f"No client received this command!")
         return (0,[])
     print(f"{num_clients} drones received this command.")
 
     # Listen for a responses
-    # if a command takes longer than timeout it won't catch response
     print(f"Listening for responses... ", end="")
     resps = _catchAllResponses(p, num_clients)
     print(f"{len(resps)} received. Done.")
@@ -388,6 +416,10 @@ def _catchAllResponses(p, num_clients):
 
     return resps
 
+    # timeout logic is a little tricky here
+    # because it can sit in the loop waiting and doing nothing
+    # and that needs to be independently interrupted at timeout
+
 
 # ============================================================================ #
 #  _notificationHandler
@@ -435,6 +467,48 @@ def _strToArgsAndKwargs(args_str=''):
             args.append(e)
 
     return args, kwargs
+
+
+# ============================================================================ #
+# _bid_drid
+def _bid_drid(id):
+    '''Separate id into bid.drid.
+    Returns int (bid, drid), (bid, None), or (None, None).
+
+    id: (str) in format 'bid.drid' or 'bid'.
+    '''
+
+    import re
+
+    # casting from Redis strings
+    id  = str(id)
+    
+    if re.fullmatch(r'\d+(\.\d+)?', id): # enforce 'x.y' or 'x'
+
+        parts = id.split('.')
+        bid = int(parts[0])
+        drid = int(parts[1]) if len(parts) > 1 else None
+        
+    else: # incorrect format
+        bid, drid = None, None
+
+    return bid, drid
+
+
+# ============================================================================ #
+# _id
+def _id(bid, drid=None):
+    '''Join bid.drid into id.
+    '''
+
+    id = f"{bid}.{drid}"
+
+    # check for consistency
+    bidc, dridc = _bid_drid(id)
+    if bidc != bid or dridc != drid:
+        id = None
+
+    return id
 
 
 

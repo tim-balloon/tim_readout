@@ -13,6 +13,7 @@
 
 import queen
 import alcove
+
 import os
 import argparse
 
@@ -92,7 +93,8 @@ def _setupArgparse():
         " Note: Avoid subargs starting with '-a' or '-q' due to known bug.")
 
     parser.add_argument("id", nargs='?',
-        type=str, help="Board and drone id: format is 'bid' or 'bid.drid'.")
+        type=str, help="Board and drone id: format is 'bid', 'bid.drid', or '[bid.drid]'.")
+
     parser.add_argument("-q", "--queen",
         action="store_true", help="Queen command instead of board command.")
 
@@ -111,43 +113,23 @@ def _setupArgparse():
 
 
 # ============================================================================ #
-# _bid_drid
-def _bid_drid(id):
-    '''Separate id into bid.drid.
-    Returns int (bid, drid), (bid, None), or (None, None).
-
-    id: (str) in format 'bid.drid' or 'bid'.
-    '''
-
-    import re
-
-    # casting from Redis strings
-    id  = str(id)
-    
-    if re.fullmatch(r'\d+(\.\d+)?', id): # enforce 'x.y' or 'x'
-
-        parts = id.split('.')
-        bid = int(parts[0])
-        drid = int(parts[1]) if len(parts) > 1 else None
-        
-    else: # incorrect format
-        bid, drid = None, None
-
-    return bid, drid
-
-
-# ============================================================================ #
 # _processCommand
 def _processCommand(args):
     """Process a single command.
-    Can be for a single bid.drid, all bid.drid, or queen.
     Look at _setupArgparse() for arguments setup.
     """
 
-    bid, drid = _bid_drid(args.id) if args.id else (None, None)
+    # parse args.id
+    bid, drid, list_bid_drids = None, None, None
+    if args.id:
+        list_bid_drids = _strToList(args.id)
+        if not list_bid_drids: # not a list
+            bid, drid = queen._bid_drid(args.id)
+
     ret_data = not args.silent
 
     # queen command
+    # TODO: not compatible with list yet
     if args.queen:
         print(f"Queen command {args.com_num}... ", flush=True)
         ret = queen.callCom(
@@ -170,6 +152,14 @@ def _processCommand(args):
                   f"command {args.com_num}... ", flush=True)
             ret = queen.alcoveCommand(args.com_num, 
                 bid=bid, args=args.arguments, ret_data=ret_data)
+            
+        # list of targeted drones
+        elif list_bid_drids:
+            print(f"Sending list " \
+                  f"command {args.com_num}... ", flush=True)
+            ret = queen.alcoveCommand(args.com_num, 
+                args=args.arguments, ret_data=ret_data,
+                list_bid_drids=list_bid_drids)
 
         # all drones
         else:
@@ -183,6 +173,22 @@ def _processCommand(args):
         else:
             print(f"Done. {ret[0]} drones received. {len(ret[1])} responses.")
 
+
+
+def _strToList(s):
+    '''Convert string to list, if reasonable to do so.
+    Otherwise return None.
+    '''
+
+    s = s.strip()
+    
+    # Check if the string is enclosed in square brackets
+    if s.startswith("[") and s.endswith("]"):
+        s = s[1:-1]  # Remove brackets
+        elements = [elem.strip(" \"'") for elem in s.split(',')]
+        return [str(elem) for elem in elements]  # elements -> strings
+    
+    return None
 
 
 
