@@ -146,13 +146,16 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
     num_clients = 0
 
     # send command to all clients in list
+    list_bid_drids_sent = []
     if list_bid_drids:
         for bid_drid in list_bid_drids:
             bid, drid = _bid_drid(bid_drid)
-            if drid: # don't allow just bid for list method
-                num_clients += sendCom(bid, drid)
-            else:
+            if not drid: # don't allow just bid for list method
                 print(f"List item ({bid_drid}) invalid: Require drid.")
+                continue
+            if f"{bid}.{drid}" not in list_bid_drids_sent: # once per chan
+                num_clients += sendCom(bid, drid)
+                list_bid_drids_sent.append(f"{bid}.{drid}")
 
     # send command to all_boards 
     # or specified bid[.drid]
