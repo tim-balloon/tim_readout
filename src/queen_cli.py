@@ -122,7 +122,7 @@ def _processCommand(args):
     # parse args.id
     bid, drid, list_bid_drids = None, None, None
     if args.id:
-        list_bid_drids = _strToList(args.id)
+        list_bid_drids = queen._strToList(args.id)
         if not list_bid_drids: # not a list
             bid, drid = queen._bid_drid(args.id)
 
@@ -173,22 +173,6 @@ def _processCommand(args):
         else:
             print(f"Done. {ret[0]} drones received. {len(ret[1])} responses.")
 
-
-
-def _strToList(s):
-    '''Convert string to list, if reasonable to do so.
-    Otherwise return None.
-    '''
-
-    s = s.strip()
-    
-    # Check if the string is enclosed in square brackets
-    if s.startswith("[") and s.endswith("]"):
-        s = s[1:-1]  # Remove brackets
-        elements = [elem.strip(" \"'") for elem in s.split(',')]
-        return [str(elem) for elem in elements]  # elements -> strings
-    
-    return None
 
 
 

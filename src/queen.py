@@ -473,6 +473,26 @@ def _strToArgsAndKwargs(args_str=''):
 
 
 # ============================================================================ #
+# _strToList
+def _strToList(s):
+    '''Convert string to list, if reasonable to do so.
+    Otherwise return None.
+    '''
+
+    if s:
+
+        s = s.strip()
+        
+        # Check if the string is enclosed in square brackets
+        if s.startswith("[") and s.endswith("]"):
+            s = s[1:-1]  # Remove brackets
+            elements = [elem.strip(" \"'") for elem in s.split(',')]
+            return [str(elem) for elem in elements]  # elements -> strings
+    
+    return None
+
+
+# ============================================================================ #
 # _bid_drid
 def _bid_drid(id):
     '''Separate id into bid.drid.

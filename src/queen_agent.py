@@ -911,7 +911,7 @@ def _comNumAlcove(com_str):
 
 # ============================================================================ #
 # _sendAlcoveCommand
-def _sendAlcoveCommand(com_str, com_to, com_args=None, silent=False):
+def _sendAlcoveCommand(com_str, com_to=None, com_args=None, silent=False):
     """Send Alcove command.
 
     com_str:    (str)   String name of command. 
@@ -919,36 +919,43 @@ def _sendAlcoveCommand(com_str, com_to, com_args=None, silent=False):
                         E.g. 'alcove_base.setNCLO'
     com_to:     (str)   Drone to send command to.
                         E.g. '1.1' is board 1, drone 1.
+                        '1' is board 1.
+                        List okay: e.g. '[1.1,2.4]' .
     com_args:   (str)   Command arguments.
                         E.g. 'f_lo=500'
     ret_data:   (bool)  Whether the board should return data or be silent.
     """
 
-    print(com_str, com_to, com_args)
-
     com_num = _comNumAlcove(com_str)
+
     ret_data = not silent
 
-    print(com_num)
-
-    # specific board/drone command
+    # parse com_to
+    bid, drid, list_bid_drids = None, None, None
     if com_to:
-        ids = com_to.split('.')
-        bid = int(ids[0]) # must exist
-        drid = int(ids[1]) if len(ids)>1 else None
-        if drid:
-            return queen.alcoveCommand(
-                com_num, bid=bid, drid=drid, args=com_args, ret_data=ret_data)
-        else:
-            return queen.alcoveCommand(
-                com_num, bid=bid, args=com_args, ret_data=ret_data)
+        list_bid_drids = queen._strToList(com_to)
+        if not list_bid_drids: # not a list
+            bid, drid = queen._bid_drid(com_to)
 
-# ret = queen.alcoveCommand(args.com_num, bid=bid, drid=drid, args=args.arguments, ret_data=ret_data)
-
-    # all-boards commands
-    else:
+    if bid and drid:
         return queen.alcoveCommand(
-            com_num, all_boards=True, args=com_args, ret_data=ret_data)
+            com_num, args=com_args, ret_data=ret_data, 
+            bid=bid, drid=drid)
+    
+    elif bid:
+        return queen.alcoveCommand(
+            com_num, args=com_args, ret_data=ret_data, 
+            bid=bid)
+
+    elif list_bid_drids:
+        return queen.alcoveCommand(
+            com_num, args=com_args, ret_data=ret_data,
+            list_bid_drids=list_bid_drids)
+
+    else: # all-boards commands
+        return queen.alcoveCommand(
+            com_num, args=com_args, ret_data=ret_data, 
+            all_boards=True)
     
 
 
