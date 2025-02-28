@@ -11,59 +11,73 @@ try: from config import board as cfg_b
 except ImportError: cfg_b = None 
 
 
+
+# ============================================================================ #
+# _firmware_chan
+def _firmware_chan(firmware, chan):
+    return {
+        1: firmware.chan1,
+        2: firmware.chan2,
+        3: firmware.chan3,
+        4: firmware.chan4,
+    }[chan]
+
+
 # ============================================================================ #
 # setAccumLength
 def setAccumLength():
+    """
+    Sets the accumulation length in the DSP registers, determining sample rate.
 
-    chan = cfg_b.drid
+    This function configures the `accum_len` register within the DSP registers, 
+    which controls the clock division and consequently the detector sample rate. 
 
-    if chan == 1:
-        dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
-    elif chan == 2:
-        dsp_regs = cfg_b.firmware.chan2.dsp_regs_0
-    elif chan == 3:
-        dsp_regs = cfg_b.firmware.chan3.dsp_regs_0
-    elif chan == 4:
-        dsp_regs = cfg_b.firmware.chan4.dsp_regs_0
-    else:
-        return "Does not compute"
-    accum_length = cfg_b.accum_len # 2**19-1
-    dsp_regs.write(0x08, accum_length)
+    Note:
+        - The function relies on `cfg_b.firmware`, `cfg_b.drid`, 
+          and `cfg_b.accum_len`.
+        - The DSP register layout is as follows:
+            - 0x00: fft_shift[9:0], load_bins[22:12], lut_counter_rst[11]
+            - 0x04: bin_num[9:0]
+            - 0x08: accum_len[23:0], accum_rst[24], sync_in[26] (start dac)
+            - 0x0c: dds_shift[8:0]
+        - The clock source is assumed to be 512 MHz.
+    """
+
+    dsp_regs = _firmware_chan(cfg_b.firmware, cfg_b.drid).dsp_regs_0
+    dsp_regs.write(0x08, cfg_b.accum_len)
 
 
 # ============================================================================ #
 # _resetAccumAndSync
 def _resetAccumAndSync(chan, freqs):
-    if chan == 1:
-        dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
-    elif chan == 2:
-        dsp_regs = cfg_b.firmware.chan2.dsp_regs_0
-    elif chan == 3:
-        dsp_regs = cfg_b.firmware.chan3.dsp_regs_0
-    elif chan == 4:
-        dsp_regs = cfg_b.firmware.chan4.dsp_regs_0
-    else:
-        return "Does not compute"
-    # dsp_regs bitfield map
-    # 0x00 -  fft_shift[9 downto 0], load_bins[22 downto 12], lut_counter_rst[11 downto 11]
-    # 0x04 -  bin_num[9 downto 0]
-    # 0x08 -  accum_len[23 downto 0], accum_rst[24 downto 24], sync_in[26 downto 26] (start dac)
-    # 0x0c -  dds_shift[8 downto 0]
-    # initialization
-    sync_in = 2**26
-    accum_rst = 2**24  # (active rising edge)
-    accum_length = cfg_b.accum_len # 2**19-1
-    fft_shift=0
-    if len(freqs)<400:
-        fft_shift = 2**9-1 #2**9-1
-    else:
-        fft_shift = 2**5-1 #2**2-1
-    dsp_regs.write(0x00, fft_shift) # set fft shift
-    ########################
+    '''
+    Resets the accumulator and synchronizes the DAC.
+
+    This function performs a sequence of writes to the DSP registers to reset 
+    the accumulator, synchronize the DAC, and configure the FFT and DDS shift 
+    values.
+
+    Args:
+        chan: The channel identifier (not used anymore - backwards compatible).
+        freqs (list or numpy.ndarray): A list or array of frequencies, used to determine
+            the FFT shift value.
+
+    Note:
+        - Relies on `cfg_b.firmware`, `cfg_b.drid`, and `cfg_b.accum_len`.
+        - `accum_rst` is active on the rising edge.
+    '''
+
+    dsp_regs = _firmware_chan(cfg_b.firmware, cfg_b.drid).dsp_regs_0
+
+    sync_in      = 2**26
+    accum_rst    = 2**24  # (active rising edge)
+    accum_length = cfg_b.accum_len # e.g. 2**19-1
+    fft_shift    = 2**9-1 if len(freqs)<400 else 2**5-1
+
+    dsp_regs.write(0x00, fft_shift)
     dsp_regs.write(0x08, accum_length | sync_in)
     dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
     dsp_regs.write(0x0c, 180) # 260)
-    return
 
 
 # ============================================================================ #
@@ -82,29 +96,8 @@ def _loadBinList(chan, freq_list):
     if np.size(pos_bin_idx) > 0:
         bin_list[pos_bin_idx] = fft_len - bin_list[pos_bin_idx]
     bin_list = np.abs(bin_list)
-    # DSP REGS
-    if chan == 1:
-        dsp_regs = cfg_b.firmware.chan1.dsp_regs_0
-    elif chan == 2:
-        dsp_regs = cfg_b.firmware.chan2.dsp_regs_0
-    elif chan == 3:
-        dsp_regs = cfg_b.firmware.chan3.dsp_regs_0
-    elif chan == 4:
-        dsp_regs = cfg_b.firmware.chan4.dsp_regs_0
-    else:
-        return "Does not compute"
-    # 0x00 -  fft_shift[9 downto 0], load_bins[22 downto 12], lut_counter_rst[11 downto 11] 
-    # 0x04 -  bin_num[9 downto 0]
-    # 0x08 -  accum_len[23 downto 0], accum_rst[24 downto 24], sync_in[26 downto 26] (start dac)
-    # 0x0c -  dds_shift[8 downto 0]
-    
-    # initialization 
-    # sync_in = 2**26
-    # accum_rst = 2**24  # (active low)
-    # accum_length = (2**19)-1
 
-    # # Load DDC bins
-    # offs=0
+    dsp_regs = _firmware_chan(cfg_b.firmware, cfg_b.drid).dsp_regs_0
     
     # only write tones to bin list
     for addr in range(fft_len):
@@ -127,16 +120,12 @@ def _loadDdr4(chan, wave_real, wave_imag, dphi):
     import numpy as np
     from pynq import MMIO
 
-    if chan == 1:
-        base_addr_dphis = 0xa004c000
-    elif chan == 2:
-        base_addr_dphis = 0xa0040000
-    elif chan == 3:
-        base_addr_dphis = 0xa0042000
-    elif chan == 4:
-        base_addr_dphis = 0xa004e000
-    else:
-        return "Does not compute"
+    base_addr_dphis = {
+        1: 0xa004c000,
+        2: 0xa0040000,
+        3: 0xa0042000,
+        4: 0xa004e000,
+    }[chan]
     
     # write dphi to bram
     dphi_16b = dphi.astype("uint16")
@@ -173,37 +162,53 @@ def _loadDdr4(chan, wave_real, wave_imag, dphi):
 
 # ============================================================================ #
 # genAmpsAndPhis
-def genAmpsAndPhis(
-        freqs, amp_max=(2**15-1), amp_factor_init=0.36, phase_loops=10):
-    '''Generate the amps and phis from given freqs for a tone comb.
-    
-    freqs: (1D array of floats) The tone placement frequencies. 
-    amp_max: (float) The maximum waveform amplitude allowed (DAC limited). 
-    amp_factor_init (float) Initial amp_max factor to try.
-        0.36 usually has a quick solution (11+/-5 loops).
-    phase_loops: (float) Max number of loops with random phases.
+def genAmpsAndPhis(freqs, amp_max=(2**15-1), phase_trials=5):  
     '''
+    Generates amplitudes and optimized phases for a set of frequencies to minimize waveform peak.
+
+    This function calculates amplitudes and phases for a set of sinusoidal components with given frequencies, aiming to reduce the peak amplitude of the resulting composite waveform. It initializes amplitudes with equal values and then iteratively searches for optimal phases by randomly sampling and evaluating
+    the waveform's peak.
+
+    Args:
+        freqs (numpy.ndarray): An array of frequencies (Hz) for the sinusoidal components.
+        amp_max (int, optional): The maximum allowed amplitude for the waveform. Defaults to (2**15-1).
+        phase_trials (int, optional): The number of random phase sets to try. Defaults to 5.
+
+    Returns:
+        tuple: A tuple containing:
+            - amps (numpy.ndarray): An array of calculated amplitudes.
+            - best_phis (numpy.ndarray): An array of optimized phases (radians).
+
+    Notes:
+        - Phases are randomly sampled within the range [-pi, pi].
+    '''
+
+    import numpy as np
     
-    import numpy as np    
+    # number of tones
+    N = len(freqs) 
+
+    # assuming equal amplitudes
+    amps = np.ones(N)*(amp_max/np.sqrt(N))
     
+    # waveform peak
     def ampPeak(freqs, amps, phis):
-        x, _, _ = generateWaveDdr4(freqs, amps, phis)
-        x.real, x.imag = x.real.astype("int16"), x.imag.astype("int16")
+        x,_,_ = generateWaveDdr4(freqs, amps, phis)
         return np.max(np.abs(x.real + 1j*x.imag))
     
-    N = len(freqs)
-    
-    for amp_factor in np.arange(amp_factor_init, 0, -0.02):
-        amps = np.ones(N)*amp_max*amp_factor/np.sqrt(N)
-           
-        for _ in range(phase_loops):
-            phis = np.random.uniform(-np.pi, np.pi, N) # phases
-
-            if ampPeak(freqs, amps, phis) < amp_max:
-                return amps, phis
-
-## Refactor this function to optimize search algorithm
-# Use a binary search algorithm
+    # sample random phases, choose best
+    best_peak = float('inf')
+    best_phis = None
+    for _ in range(phase_trials):
+        phis = np.random.uniform(-np.pi, np.pi, N)
+        peak = ampPeak(freqs, amps, phis)
+        if peak < best_peak:
+            best_peak = peak
+            best_phis = phis
+            
+    # scale amps with best phase solution so less than amp_max
+    amps *= (amp_max / best_peak)
+    return amps, best_phis
 
 
 # ============================================================================ #

@@ -143,37 +143,60 @@ def writeChannelCount(num_chans):
     udp_control.write(0x08, val)
 
 
-# ============================================================================ #
-# generateWaveDdr4
-def generateWaveDdr4(freq_list, amp_list, phi):  
+def generateWaveDdr4(freqs, amps, phis):
+    '''
+    Generates a DDR4 waveform and associated phase correction data.
 
+    This function synthesizes a waveform by summing multiple sinusoidal components defined by their frequencies, amplitudes, and phases. It also calculates the necessary phase correction values for subsequent signal processing, particularly for FFT-based operations.
+
+    Args:
+        freqs (numpy.ndarray): An array of frequencies (Hz) for each sinusoidal component.
+        amps (numpy.ndarray): An array of amplitudes for each sinusoidal component.
+        phis (numpy.ndarray): An array of initial phases (radians) for each sinusoidal component.
+
+    Returns:
+        tuple: A tuple containing:
+            - x (numpy.ndarray): The generated waveform in the time domain (complex).
+            - dphi (numpy.ndarray): An array of phase correction values (float64).
+            - freqs_actual (numpy.ndarray): The actual frequencies used after quantization.
+
+    Notes:
+        - The function relies on system constants `cfg_b.wf_fs`, `cfg_b.wf_lut_len`, and `cfg_b.wf_fft_len`.
+    '''
+    
     import numpy as np
 
-    # freq_list may be complex but imag parts should all be zero
-    freq_list = np.real(freq_list)
-    amp_list = np.real(amp_list)
-    phi = np.real(phi)
+    # Ensure real values
+    freqs = np.real(freqs)
+    amps  = np.real(amps)
+    phis  = np.real(phis)
 
-    fs = cfg_b.wf_fs # 512e6 
-    lut_len = cfg_b.wf_lut_len # 2**20
-    fft_len = cfg_b.wf_fft_len # 1024
-    k = np.int64(np.round(freq_list/(fs/lut_len)))
-    freq_actual = k*(fs/lut_len)
-    X = np.zeros(lut_len,dtype='complex')
-    #phi = np.random.uniform(-np.pi, np.pi, np.size(freq_list))
-    for i in range(np.size(k)):
-        X[k[i]] = np.exp(-1j*phi[i])*amp_list[i] # multiply by amplitude
-    x = np.fft.ifft(X) * lut_len
-    bin_num = np.int64(np.round(freq_actual / (fs / fft_len)))
-    f_beat = bin_num*fs/fft_len - freq_actual
-    dphi0 = f_beat/(fs/fft_len)*2**16
-    if np.size(dphi0) > 1:
-        dphi = np.concatenate((dphi0, np.zeros(fft_len - np.size(dphi0))))
-    else:
-        z = np.zeros(fft_len)
-        z[0] = dphi0
-        dphi = z
-    return x, dphi, freq_actual
+    # System constants
+    fs      = cfg_b.wf_fs       # Sampling frequency (Hz), e.g., 512 MHz
+    lut_len = cfg_b.wf_lut_len  # Lookup table length, e.g., 2**20
+    fft_len = cfg_b.wf_fft_len  # FFT length, e.g., 1024
+
+    # Compute frequency bins
+    k            = np.round(freqs/(fs/lut_len)).astype(np.int64)
+    freqs_actual = k*(fs/lut_len)
+
+    # Vectorized X assignment (frequency space)
+    X    = np.zeros(lut_len, dtype=np.complex128)
+    X[k] = np.exp(-1j*phis)*amps
+
+    # Compute IFFT efficiently
+    x = np.fft.ifft(X, norm='backward')*lut_len
+    
+    # Compute bin numbers & phase correction
+    bin_num = np.round(freqs_actual/(fs/fft_len)).astype(np.int64)
+    f_beat  = bin_num*(fs/fft_len) - freqs_actual
+    dphi0   = (f_beat/(fs/fft_len))*2**16
+
+    # Efficiently initialize dphi
+    dphi = np.zeros(fft_len, dtype=np.float64)
+    dphi[:len(dphi0)] = dphi0
+
+    return x, dphi, freqs_actual
 
 
 # ============================================================================ #
