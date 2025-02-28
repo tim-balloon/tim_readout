@@ -207,7 +207,7 @@ def genAmpsAndPhis(freqs, amp_max=(2**15-1), phase_trials=5):
             best_phis = phis
             
     # scale amps with best phase solution so less than amp_max
-    amps *= (amp_max/best_peak)/2
+    amps *= (amp_max/best_peak)
     return amps, best_phis
 
 
