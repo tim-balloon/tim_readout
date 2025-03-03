@@ -162,7 +162,7 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
     # send command to all_boards 
     # or specified bid[.drid]
     else:
-        num_clients += sendCom(bid, drid)
+        num_clients += sendCom(bid, drid)[0]
 
     # number of clients that received command
     if num_clients == 0:
