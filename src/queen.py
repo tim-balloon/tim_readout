@@ -137,15 +137,16 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
     payload += '' if args is None else f' {args}'
 
     # send command to a single chan
-    def sendCom(bid, drid): # generic alcove command algorithm: 
-        chan = chans.comChan(bid, drid)            # get pub/sub chans
+    def sendCom(bid, drid, cid=None): # generic alcove command algorithm: 
+        chan = chans.comChan(bid, drid, cid=cid)   # get pub/sub chans
         p.psubscribe(chan.subRet)                  # subscribe to returns
         num_clients = r.publish(chan.pub, payload) # publish command
-        return num_clients
+        return num_clients, chan.cid
     
     num_clients = 0
 
     # send command to all clients in list
+    cid = None # common unique command identifier
     list_bid_drids_sent = []
     if list_bid_drids:
         for bid_drid in list_bid_drids:
@@ -154,7 +155,8 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
                 print(f"List item ({bid_drid}) invalid: Require drid.")
                 continue
             if f"{bid}.{drid}" not in list_bid_drids_sent: # once per chan
-                num_clients += sendCom(bid, drid)
+                _num_clients, cid = sendCom(bid, drid, cid=cid)
+                num_clients += _num_clients
                 list_bid_drids_sent.append(f"{bid}.{drid}")
 
     # send command to all_boards 

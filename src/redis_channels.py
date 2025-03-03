@@ -104,7 +104,7 @@ def _subChan(bid=None, drid=None, cid=None, ret=False, wildcard=True):
 
 # ============================================================================ #
 # _genChanParts
-def _genChanParts(bid, drid):
+def _genChanParts(bid, drid, cid=None):
     '''Generate all parts for chan (bid, drid, id, cid).
 
     bid: (int) Board identifier.
@@ -113,7 +113,8 @@ def _genChanParts(bid, drid):
 
     id = _id(bid, drid)
     
-    cid = str(uuid.uuid4())
+    if cid is None:
+        cid = str(uuid.uuid4())
 
     return bid, drid, id, cid
 
@@ -159,27 +160,31 @@ def _recoverChanParts(chan):
 # ============================================================================ #
 # comChan class
 class comChan:
-    def __init__(self, bid:int=None, drid:int=None, chan:str=None):
+    def __init__(self, bid=None, drid=None, chan=None, cid=None):
         '''Produce all the pub and sub chan names and details.
 
         bid: (int) Board identifier.
         drid: (int) Drone identifier {1,4}.
-        chan: (str) Channel name. Ignore bid and drid if given.
+        chan: (str) Channel name. 
+            Ignore bid, drid and cid if given.
+        cid: (str) Channel unique identifier.
+            Send this only if already pre-generated, e.g. command sets.
         '''
 
         # casting inputs
-        bid = int(bid) if bid else None
+        bid  = int(bid) if bid else None
         drid = int(drid) if drid else None
         chan = str(chan) if chan else None
+        cid  = str(cid) if cid else None
 
         # if chan is given, then rebuild existing channels
-        # note we overwrite input bid and drid if chan exists
+        # note we overwrite input bid, drid, and cid if chan exists
         if chan:
             bid, drid, id, cid = _recoverChanParts(chan)
 
-        # chan is not given, so generate new channels
+        # chan is not given, so generate new channel
         else:
-            bid, drid, id, cid = _genChanParts(bid, drid)
+            bid, drid, id, cid = _genChanParts(bid, drid, cid)
 
         self.bid = bid
         self.drid = drid
