@@ -112,6 +112,7 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
 def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     import time
+    from time import sleep
     import numpy as np
     
     N_steps  = int(N_steps)
