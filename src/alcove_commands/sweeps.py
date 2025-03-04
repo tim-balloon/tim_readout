@@ -52,7 +52,7 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
 # ============================================================================ #
 # _sweep
-def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
+# def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     """
     Perform a stepped LO frequency sweep with existing comb centered at f_center.
     
@@ -73,9 +73,6 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     N_steps  = int(N_steps)
     f_center = float(f_center)
     N_accums = int(N_accums)
-
-    # if getNCLO(chan) != f_center:
-    #     print(f"Warning: Set NCLO (={getNCLO(chan)}) differs from f_center (={f_center}).")
 
     if chan_bandwidth:         # LO bandwidth given
         bw = float(chan_bandwidth)    # MHz
@@ -111,6 +108,61 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     setFineNCLO(0)
     # _setNCLO2(chan, 0)
 
+    return (f, Z)
+
+def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
+    import time
+    import numpy as np
+    
+    N_steps  = int(N_steps)
+    f_center = float(f_center)
+    N_accums = int(N_accums)
+    
+    if chan_bandwidth:
+        bw = float(chan_bandwidth)  # MHz
+    else:
+        bw = np.diff(freqs)[0] / 1e6  # MHz
+    
+    flos = np.linspace(f_center - bw / 2.0, f_center + bw / 2.0, N_steps)
+    
+    print("[DEBUG] Discarding previous accum samples...")
+    start_time = time.time()
+    _, _ = getSnapData(3, wrap=False)  # Discard old samples
+    It, Qt = getSnapData(3, wrap=False)  # Grab new template samples
+    print(f"[DEBUG] Data discard time: {time.time() - start_time:.6f} s")
+    
+    def _Z(lofreq, Naccums=N_accums):
+        print(f"[DEBUG] Setting LO frequency: {lofreq:.6f} MHz")
+        start_time = time.time()
+        setFineNCLO(lofreq)
+        print(f"[DEBUG] LO frequency set time: {time.time() - start_time:.6f} s")
+        
+        Is, Qs = 0, 0
+        
+        start_time = time.time()
+        for i in range(Naccums):
+            sleep(0.003)
+            I, Q = getSnapData(3, wrap=False)
+            Is += I / Naccums
+            Qs += Q / Naccums
+        print(f"[DEBUG] Data accumulation time for {Naccums} samples: {time.time() - start_time:.6f} s")
+        
+        Z = Is + 1j * Qs  # Convert to complex
+        return Z[0:len(freqs)]  # Return only relevant slice
+    
+    print("[DEBUG] Starting frequency sweep...")
+    start_time = time.time()
+    Z = np.array([_Z(lofreq - f_center) for lofreq in flos]).T.flatten()
+    print(f"[DEBUG] Total sweep time: {time.time() - start_time:.6f} s")
+    
+    start_time = time.time()
+    f = np.array([flos * 1e6 + ftone for ftone in freqs]).flatten()
+    print(f"[DEBUG] Frequency bin calculation time: {time.time() - start_time:.6f} s")
+    
+    start_time = time.time()
+    setFineNCLO(0)  # Reset LO frequency
+    print(f"[DEBUG] LO reset time: {time.time() - start_time:.6f} s")
+    
     return (f, Z)
 
 
