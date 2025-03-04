@@ -110,7 +110,13 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
     return (f, Z)
 
+
+
 def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
+    """
+    Perform a stepped LO frequency sweep with existing comb centered at f_center.
+    """
+
     import time
     from time import sleep
     import numpy as np
@@ -125,33 +131,44 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
         bw = np.diff(freqs)[0] / 1e6  # MHz
     
     flos = np.linspace(f_center - bw / 2.0, f_center + bw / 2.0, N_steps)
-
+    
     _, _ = getSnapData(3, wrap=False)  # Discard old samples
     It, Qt = getSnapData(3, wrap=False)  # Grab new template samples
     
+    def _find_stable_delay(lofreq):
+        setFineNCLO(lofreq)
+        prev_I, prev_Q = getSnapData(3, wrap=False)
+        
+        for delay in [10e-6, 50e-6, 100e-6, 500e-6, 1e-3, 2e-3]:  # Test various delays
+            sleep(delay)
+            I, Q = getSnapData(3, wrap=False)
+            if np.all(np.abs(I - prev_I) < 1e-3) and np.all(np.abs(Q - prev_Q) < 1e-3):
+                return delay  # Return the smallest stable delay
+            prev_I, prev_Q = I, Q
+        return 3e-3  # Default to 3 ms if no stable delay is found
+    
+    stable_delays = []
     def _Z(lofreq, Naccums=N_accums):
         setFineNCLO(lofreq)
+        stable_delay = _find_stable_delay(lofreq)
+        stable_delays.append(stable_delay)
+        sleep(stable_delay)  # Use measured stable delay
         
         Is, Qs = 0, 0
-        
-        # start_time = time.time()
         for i in range(Naccums):
-            # sleep(0.003)
             I, Q = getSnapData(3, wrap=False)
             Is += I / Naccums
             Qs += Q / Naccums
-        # print(f"[DEBUG] Data accumulation time for {Naccums} samples: {time.time() - start_time:.6f} s")
         
         Z = Is + 1j * Qs  # Convert to complex
         return Z[0:len(freqs)]  # Return only relevant slice
     
-    print("[DEBUG] Starting frequency sweep...")
-    start_time = time.time()
     Z = np.array([_Z(lofreq - f_center) for lofreq in flos]).T.flatten()
-    print(f"[DEBUG] Total sweep time: {time.time() - start_time:.6f} s")
     
     f = np.array([flos * 1e6 + ftone for ftone in freqs]).flatten()
     
+    print(f"Stable delay: mean={np.mean(stable_delays)}, std={np.std(stable_delays)}")
+
     setFineNCLO(0)  # Reset LO frequency
     
     return (f, Z)
