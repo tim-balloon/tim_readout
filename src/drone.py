@@ -20,9 +20,9 @@ import shutil
 import pickle
 import logging
 import argparse
+import builtins
 import importlib
 import threading
-
 
 import alcove
 from config import board as cfg_b
@@ -101,6 +101,8 @@ def print(*args, **kw):
 
     # print to console
     _print(msg, **kw)
+
+builtins.print = print
 
 
 # ============================================================================ #
@@ -242,41 +244,43 @@ def listenMode(r, p, chan_subs, command_queue):
         command_queue.put((chan_str, payload))
 
 
+'''
 # ============================================================================ #
 # listenMode
-# def listenMode(r, p, chan_subs):
-#     p.psubscribe(chan_subs)             # channels to listen to
+def listenMode(r, p, chan_subs):
+    p.psubscribe(chan_subs)             # channels to listen to
 
-#     last_chan_str = ''
+    last_chan_str = ''
 
-#     for new_message in p.listen():      # infinite listening loop
-#         # print(new_message)
+    for new_message in p.listen():      # infinite listening loop
+        # print(new_message)
 
-#         # check this is a command
-#         if new_message['type'] != 'pmessage':
-#             continue
+        # check this is a command
+        if new_message['type'] != 'pmessage':
+            continue
 
-#         # get channel string (unique to command)
-#         chan_str = new_message['channel'].decode('utf-8')
-#         # cid = chan_sub.split('_')[-1]    # recover cid from channel
+        # get channel string (unique to command)
+        chan_str = new_message['channel'].decode('utf-8')
+        # cid = chan_sub.split('_')[-1]    # recover cid from channel
 
-#         # check we haven't already processed this message
-#         # e.g. could have come through on another channel
-#         if chan_str == last_chan_str:
-#             continue
-#         last_chan_str = chan_str
+        # check we haven't already processed this message
+        # e.g. could have come through on another channel
+        if chan_str == last_chan_str:
+            continue
+        last_chan_str = chan_str
 
-#         payload = new_message['data'].decode('utf-8')
-#         try:
-#             com_num, ret_data, args, kwargs = payloadToCom(payload)
-#             # print(com_num, args, kwargs)
-#             com_ret = executeCommand(com_num, ret_data, args, chan_str, kwargs)
-#         except Exception as e:
-#             com_ret = f"Payload error ({payload}): {e}"
-#             print(com_ret)
+        payload = new_message['data'].decode('utf-8')
+        try:
+            com_num, ret_data, args, kwargs = payloadToCom(payload)
+            # print(com_num, args, kwargs)
+            com_ret = executeCommand(com_num, ret_data, args, chan_str, kwargs)
+        except Exception as e:
+            com_ret = f"Payload error ({payload}): {e}"
+            print(com_ret)
         
-#         # publishResponse(com_ret, r, bid, cid) # send response
-#         publishResponse(com_ret, r, chan_str) # send response
+        # publishResponse(com_ret, r, bid, cid) # send response
+        publishResponse(com_ret, r, chan_str) # send response
+'''
 
 
 # ============================================================================ #
