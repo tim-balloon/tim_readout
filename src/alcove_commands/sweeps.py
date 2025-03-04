@@ -125,28 +125,22 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
         bw = np.diff(freqs)[0] / 1e6  # MHz
     
     flos = np.linspace(f_center - bw / 2.0, f_center + bw / 2.0, N_steps)
-    
-    print("[DEBUG] Discarding previous accum samples...")
-    start_time = time.time()
+
     _, _ = getSnapData(3, wrap=False)  # Discard old samples
     It, Qt = getSnapData(3, wrap=False)  # Grab new template samples
-    print(f"[DEBUG] Data discard time: {time.time() - start_time:.6f} s")
     
     def _Z(lofreq, Naccums=N_accums):
-        print(f"[DEBUG] Setting LO frequency: {lofreq:.6f} MHz")
-        start_time = time.time()
         setFineNCLO(lofreq)
-        print(f"[DEBUG] LO frequency set time: {time.time() - start_time:.6f} s")
         
         Is, Qs = 0, 0
         
-        start_time = time.time()
+        # start_time = time.time()
         for i in range(Naccums):
-            sleep(0.003)
+            # sleep(0.003)
             I, Q = getSnapData(3, wrap=False)
             Is += I / Naccums
             Qs += Q / Naccums
-        print(f"[DEBUG] Data accumulation time for {Naccums} samples: {time.time() - start_time:.6f} s")
+        # print(f"[DEBUG] Data accumulation time for {Naccums} samples: {time.time() - start_time:.6f} s")
         
         Z = Is + 1j * Qs  # Convert to complex
         return Z[0:len(freqs)]  # Return only relevant slice
@@ -156,13 +150,9 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     Z = np.array([_Z(lofreq - f_center) for lofreq in flos]).T.flatten()
     print(f"[DEBUG] Total sweep time: {time.time() - start_time:.6f} s")
     
-    start_time = time.time()
     f = np.array([flos * 1e6 + ftone for ftone in freqs]).flatten()
-    print(f"[DEBUG] Frequency bin calculation time: {time.time() - start_time:.6f} s")
     
-    start_time = time.time()
     setFineNCLO(0)  # Reset LO frequency
-    print(f"[DEBUG] LO reset time: {time.time() - start_time:.6f} s")
     
     return (f, Z)
 
