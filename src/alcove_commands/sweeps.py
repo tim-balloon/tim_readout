@@ -127,6 +127,7 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
 
     import numpy as np
     from time import sleep
+    import time
 
     N_steps  = int(N_steps)
     f_center = float(f_center)
@@ -152,9 +153,13 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
         Z = Is + 1j*Qs     # convert I and Q to complex
         return Z[0:len(freqs)] # only return relevant slice
     
+    start_time = time.time()
+
     # loop over each LO freq and flatten Z and f
     Z = (np.array([_Z(lofreq-f_center) for lofreq in flos]).T).flatten()
     f = np.array([flos*1e6 + ftone for ftone in freqs]).flatten()
+
+    print(f"_sweep time: {time.time() - start_time}")
         
     setFineNCLO(0) # reset LO
 
