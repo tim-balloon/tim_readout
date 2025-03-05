@@ -110,67 +110,54 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
     return (f, Z)
 
-
-
 def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     """
     Perform a stepped LO frequency sweep with existing comb centered at f_center.
+    
+    INPUTS
+    f_center:        (float) Center LO frequency for sweep [MHz].
+    freqs:           (1D array of floats) Comb frequencies [Hz].
+    N_steps:         (int) Number of LO frequencies to divide each channel into.
+    chan_bandwidth:  (float) Bandwidth of each channel [MHz].
+    
+    RETURN: tuple(f, S21)
+    f:               (1D array of floats) Central frequency for each bin.
+    Z:               (1D array of complex) S_21 complex I+jQ for each bin.
     """
 
-    import time
-    from time import sleep
     import numpy as np
-    
+    from time import sleep
+
     N_steps  = int(N_steps)
     f_center = float(f_center)
     N_accums = int(N_accums)
-    
-    if chan_bandwidth:
-        bw = float(chan_bandwidth)  # MHz
-    else:
-        bw = np.diff(freqs)[0] / 1e6  # MHz
-    
-    flos = np.linspace(f_center - bw / 2.0, f_center + bw / 2.0, N_steps)
-    
-    _, _ = getSnapData(3, wrap=False)  # Discard old samples
-    It, Qt = getSnapData(3, wrap=False)  # Grab new template samples
-    
-    def _find_stable_delay(lofreq):
-        setFineNCLO(lofreq)
-        prev_I, prev_Q = getSnapData(3, wrap=False)
-        
-        for delay in [10e-6, 50e-6, 100e-6, 500e-6, 1e-3, 2e-3]:  # Test various delays
-            sleep(delay)
-            I, Q = getSnapData(3, wrap=False)
-            if np.all(np.abs(I - prev_I) < 1e-3) and np.all(np.abs(Q - prev_Q) < 1e-3):
-                return delay  # Return the smallest stable delay
-            prev_I, prev_Q = I, Q
-        return 3e-3  # Default to 3 ms if no stable delay is found
-    
-    stable_delays = []
+
+    # build LO steps
+    if chan_bandwidth: # LO bandwidth given
+        bw = float(chan_bandwidth) # MHz
+    else:              # use tone difference
+        bw = np.diff(freqs)[0]/1e6 # MHz
+    flos = np.linspace(f_center-bw/2., f_center+bw/2., N_steps)
+
     def _Z(lofreq, Naccums=N_accums):
         setFineNCLO(lofreq)
-        stable_delay = _find_stable_delay(lofreq)
-        stable_delays.append(stable_delay)
-        sleep(stable_delay)  # Use measured stable delay
-        
+        sleep(0.003) # 0.003 s optimum to settle freq from testing
+        getSnapData(3, wrap=False) # clear
+
         Is, Qs = 0, 0
         for i in range(Naccums):
-            I, Q = getSnapData(3, wrap=False)
-            Is += I / Naccums
-            Qs += Q / Naccums
+            I, Q = getSnapData(3, wrap=False) #
+            Is += I/Naccums
+            Qs += Q/Naccums
+        Z = Is + 1j*Qs     # convert I and Q to complex
+        return Z[0:len(freqs)] # only return relevant slice
+    
+    # loop over each LO freq and flatten Z and f
+    Z = (np.array([_Z(lofreq-f_center) for lofreq in flos]).T).flatten()
+    f = np.array([flos*1e6 + ftone for ftone in freqs]).flatten()
         
-        Z = Is + 1j * Qs  # Convert to complex
-        return Z[0:len(freqs)]  # Return only relevant slice
-    
-    Z = np.array([_Z(lofreq - f_center) for lofreq in flos]).T.flatten()
-    
-    f = np.array([flos * 1e6 + ftone for ftone in freqs]).flatten()
-    
-    print(f"Stable delay: mean={np.mean(stable_delays)}, std={np.std(stable_delays)}")
+    setFineNCLO(0) # reset LO
 
-    setFineNCLO(0)  # Reset LO frequency
-    
     return (f, Z)
 
 
