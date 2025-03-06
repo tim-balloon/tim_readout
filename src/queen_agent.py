@@ -59,7 +59,8 @@ def main(args=None):
     rt('timestreamOn', readout.timestreamOn)
     rt('userPacketInfo', readout.userPacketInfo)
     rt('setAtten', readout.setAtten)
-
+    rt('setAccumLength', readout.setAccumLength)
+    
     runner.run(agent, auto_reconnect=True)
 
 
@@ -888,6 +889,33 @@ class ReadoutAgent:
         
         # return is a fail message str or number of clients int
         return True, f"setAtten: {rtn}"
+    
+
+    # ======================================================================== #
+    # .vnaSweep
+    @ocs_agent.param('com_to', default=None, type=str)
+    @ocs_agent.param('silent', default=False, type=bool)
+    def setAccumLength(self, session, params):
+        """vnaSweep()
+
+        **Task** - Sets the accumulation length in the DSP registers, determining sample rate.
+
+        Args
+        -------
+        com_to: str
+            Drone to send command to in format bid.drid.
+            If None, will send to all drones.
+            Default is None.
+        """
+  
+        rtn = _sendAlcoveCommand(
+            com_str  = 'setAccumLength', 
+            com_to   = params['com_to'],
+            silent   = params['silent'])
+        
+        # return is a fail message str or number of clients int
+        return True, f"setAccumLength: {rtn}"
+
     
 
 
