@@ -52,7 +52,7 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
 # ============================================================================ #
 # _sweep
-def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
+# def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     """
     Perform a stepped LO frequency sweep with existing comb centered at f_center.
     
@@ -110,7 +110,7 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
 
     return (f, Z)
 
-# def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=1):
+def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     """
     Perform a stepped LO frequency sweep with existing comb centered at f_center.
     
@@ -148,12 +148,6 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
         data = np.array([getSnapData(3, wrap=False) for _ in range(Naccums)])
         Is = np.mean(data[:, 0], axis=0)
         Qs = np.mean(data[:, 1], axis=0)
-
-        # Is, Qs = 0, 0
-        # for i in range(Naccums):
-        #     I, Q = getSnapData(3, wrap=False) #
-        #     Is += I/Naccums
-        #     Qs += Q/Naccums
 
         Z = Is + 1j*Qs     # convert I and Q to complex
         return Z[0:len(freqs)] # only return relevant slice
