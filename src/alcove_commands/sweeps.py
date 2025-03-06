@@ -52,7 +52,7 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
 # ============================================================================ #
 # _sweep
-# def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
+def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     """
     Perform a stepped LO frequency sweep with existing comb centered at f_center.
     
@@ -110,7 +110,7 @@ def _toneFreqsAndAmpsFromSweepData(f, Z, amps, N_steps, mod_amps=False):
 
     return (f, Z)
 
-def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
+# def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=1):
     """
     Perform a stepped LO frequency sweep with existing comb centered at f_center.
     
