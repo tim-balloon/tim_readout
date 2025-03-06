@@ -145,11 +145,16 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
         sleep(0.003) # 0.003 s optimum to settle freq from testing
         getSnapData(3, wrap=False) # clear
 
-        Is, Qs = 0, 0
-        for i in range(Naccums):
-            I, Q = getSnapData(3, wrap=False) #
-            Is += I/Naccums
-            Qs += Q/Naccums
+        data = np.array([getSnapData(3, wrap=False) for _ in range(Naccums)])
+        Is = np.mean(data[:, 0], axis=0)
+        Qs = np.mean(data[:, 1], axis=0)
+
+        # Is, Qs = 0, 0
+        # for i in range(Naccums):
+        #     I, Q = getSnapData(3, wrap=False) #
+        #     Is += I/Naccums
+        #     Qs += Q/Naccums
+
         Z = Is + 1j*Qs     # convert I and Q to complex
         return Z[0:len(freqs)] # only return relevant slice
     
