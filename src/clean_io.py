@@ -195,8 +195,6 @@ def _cleanDir(
 
     # initial message
     print(f"=== Cleaning {dname} ===")
-    if testing:
-        print("\tTESTING! Run with parameter testing=False to delete.")
 
     # walk dir to find files to delete
     try:
@@ -219,6 +217,10 @@ def _cleanDir(
         print(f"\t{file_path}")
         if not testing:
             os.remove(file_path) 
+
+    # testing guidance
+    if testing:
+        print(f"\tTESTING! Run with testing=False to perform {fcnt} deletions.")
 
     print("=== Cleaning completed. ===")
 
@@ -266,5 +268,6 @@ def cleanBoardDroneDirs(leave_latest=True, **kwargs):
 
     # build the file ignore list if leave_latest is true
     ignore_list = _boardMostRecentFilePathList() if leave_latest else []
+    print(ignore_list)
 
     _cleanDir("../drones/", ftype=".npy", ignore_list=ignore_list, **kwargs)
