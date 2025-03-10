@@ -258,7 +258,8 @@ def mostRecentTimestamp(file):
         return None
 
     print("glob:")
-    print(glob.iglob(os.path.join(dname, f'{fname}*')))
+    for _ in glob.iglob(os.path.join(dname, f'{fname}*')):
+        print(_)
 
     allversions = sorted(
         glob.iglob(os.path.join(dname, f'{fname}*')), 
