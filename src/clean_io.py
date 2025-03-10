@@ -229,7 +229,9 @@ def _boardMostRecentFilePathList():
     '''Get a list of most recent board_io file paths (list[str]).
     '''
 
-    print("_boardMostRecentFilePathList")
+    for f in board_io.file.fileList():
+        print(f)
+        print(base_io.mostRecentPath(f) )
 
     return [
         base_io.mostRecentPath(file) 
@@ -265,8 +267,6 @@ def cleanBoardDroneDirs(leave_latest=True, **kwargs):
 
     See cleanDir(...) for argument descriptions.
     """
-
-    print("cleanBoardDroneDirs")
 
     # build the file ignore list if leave_latest is true
     ignore_list = _boardMostRecentFilePathList() if leave_latest else []
