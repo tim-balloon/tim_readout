@@ -232,7 +232,7 @@ def _boardMostRecentFilePathList():
     '''
 
     return [
-        base_io.mostRecentPath(file) 
+        str(base_io.mostRecentPath(file).absolute())
         for file in board_io.file.fileList()
         ]
 
