@@ -196,6 +196,12 @@ def _cleanDir(
     # initial message
     print(f"=== Cleaning {dname} ===")
 
+    # cast from Redis strings
+    # ignore_list is not from Redis so no casting needed
+    testing = str(testing).lower() in ['true', '1']
+    if olderThanDaysAgo: olderThanDaysAgo = int(olderThanDaysAgo)
+    if largerThanMB: largerThanMB = int(largerThanMB)
+
     # walk dir to find files to delete
     try:
         file_paths_to_del = _filesFromWalk(dname, ftype,  
