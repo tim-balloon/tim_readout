@@ -8,7 +8,8 @@
 
 import os
 import re
-import datetime
+from datetime import datetime
+from datetime import timedelta
 
 try: from config import board as cfg_b
 except ImportError: cfg_b = None  
@@ -59,7 +60,7 @@ def _getFileDate(file_path):
 
     # otherwise get from ctime
     if date is None:
-        date = datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+        date = datetime.fromtimestamp(os.path.getctime(file_path))
 
     return date
 
@@ -73,7 +74,7 @@ def _isFileOlderThanDate(file_path, older_than_date):
     olderThanDate: (str) YYYY-mm-dd.
     """
 
-    delete_date = datetime.datetime.strptime(older_than_date, "%Y-%m-%d")
+    delete_date = datetime.strptime(older_than_date, "%Y-%m-%d")
 
     return (_getFileDate(file_path) < delete_date)
 
@@ -88,8 +89,8 @@ def _isFileOlderThanDaysAgo(file_path, older_than_days_ago):
     olderThanDaysAgo: (int) Number of days.
     """
 
-    delta = datetime.timedelta(days=int(older_than_days_ago))
-    current_time = datetime.datetime.now()
+    delta = timedelta(days=int(older_than_days_ago))
+    current_time = datetime.now()
 
     return ((current_time - _getFileDate(file_path)) > delta)
 
@@ -279,8 +280,6 @@ def cleanBoardDroneDirs(leave_latest=True, **kwargs):
 
     See cleanDir(...) for argument descriptions.
     """
-
-    # TODO: restrict to current drone
 
     # build the file ignore list if leave_latest is true
     ignore_list = _boardMostRecentFilePathList() if leave_latest else []
