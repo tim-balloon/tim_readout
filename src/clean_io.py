@@ -266,8 +266,11 @@ def cleanBoardDroneDirs(leave_latest=True, **kwargs):
     See cleanDir(...) for argument descriptions.
     """
 
+    # TODO: restrict to current drone
+
     # build the file ignore list if leave_latest is true
     ignore_list = _boardMostRecentFilePathList() if leave_latest else []
     print(ignore_list)
 
-    _cleanDir("../drones/", ftype=".npy", ignore_list=ignore_list, **kwargs)
+    # _cleanDir("../drones/", ftype=".npy", ignore_list=ignore_list, **kwargs)
+    _cleanDir(cfg_b.drone_dir, ftype=".npy", ignore_list=ignore_list, **kwargs)
