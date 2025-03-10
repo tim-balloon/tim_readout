@@ -307,9 +307,9 @@ def _timestamp():
     ISO 8601 compatible format.
     """
 
-    from datetime import datetime
+    from datetime import datetime, timezone
 
-    return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 # ============================================================================ #

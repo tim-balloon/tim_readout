@@ -20,6 +20,8 @@ import alcove_commands.alcove_base as alcove_base
 import alcove_commands.tones as tones
 import alcove_commands.sweeps as sweeps
 import alcove_commands.analysis as analysis
+# import alcove_commands.board_io as board_io
+import clean_io
 
 from config import parentDir
 import sys_info
@@ -66,6 +68,7 @@ def _com():
         55:analysis.findCalTones,
         60:sys_info.sys_info,
         61:sys_info.sys_info_v,
+        65:clean_io.cleanBoardDroneDirs,
         70:alcove_base.timestreamOn,
         71:alcove_base.userPacketInfo,
         80:alcove_base.setAtten
