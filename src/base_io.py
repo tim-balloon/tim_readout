@@ -295,7 +295,7 @@ def mostRecentPath(file):
     
     # file extension modification
     if file['file_type']:
-        fname += f'.{file['file_type']}'
+        fname += f".{file['file_type']}"
 
     return Path(fname)
 
