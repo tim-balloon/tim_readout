@@ -244,6 +244,8 @@ def mostRecentTimestamp(file):
     file:      (dict) File attributes. See file class.
     """
 
+    print("mostRecentTimestamp")
+
     import os
     import glob
     import numpy as np
@@ -254,6 +256,9 @@ def mostRecentTimestamp(file):
 
     if not file.get('use_timestamp', False):
         return None
+
+    print("glob:")
+    print(glob.iglob(os.path.join(dname, f'{fname}*')))
 
     allversions = sorted(
         glob.iglob(os.path.join(dname, f'{fname}*')), 
@@ -274,21 +279,23 @@ def mostRecentPath(file):
     file:      (dict) File attributes. See file class.
     """
 
+    print("mostRecentPath")
+
     from pathlib import Path
 
-    fname          = file['fname']
-    file_type      = file['file_type']
-    dname          = file['dname']
+    # fname          = file['fname']
+    # file_type      = file['file_type']
+    # dname          = file['dname']
     
-    fname = f'{dname}/{fname}'
+    fname = f'{file['dname']}/{file['fname']}'
 
     # timestamp modification
     if file.get('use_timestamp', False):
         fname += f'_{mostRecentTimestamp(file)}'
     
     # file extension modification
-    if file_type:
-        fname += f'.{file_type}'
+    if file['file_type']:
+        fname += f'.{file['file_type']}'
 
     return Path(fname)
 
