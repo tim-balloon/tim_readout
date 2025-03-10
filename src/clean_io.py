@@ -202,6 +202,14 @@ def _cleanDir(
     if olderThanDaysAgo: olderThanDaysAgo = int(olderThanDaysAgo)
     if largerThanMB: largerThanMB = int(largerThanMB)
 
+    # filter message
+    fltr_msg = ""
+    if olderThanDate: fltr_msg += f"olderThanDate={olderThanDate}; "
+    if olderThanDaysAgo: fltr_msg += f"olderThanDaysAgo={olderThanDaysAgo}; "
+    if largerThanMB: fltr_msg += f"largerThanMB={largerThanMB}; "
+    if fltr_msg != "":
+        print(f"\tFilters: {fltr_msg}")
+
     # walk dir to find files to delete
     try:
         file_paths_to_del = _filesFromWalk(dname, ftype,  
