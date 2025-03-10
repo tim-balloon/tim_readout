@@ -287,7 +287,7 @@ def mostRecentPath(file):
     # file_type      = file['file_type']
     # dname          = file['dname']
     
-    fname = f'{file['dname']}/{file['fname']}'
+    fname = f"{file['dname']}/{file['fname']}"
 
     # timestamp modification
     if file.get('use_timestamp', False):
