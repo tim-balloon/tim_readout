@@ -257,15 +257,17 @@ def mostRecentTimestamp(file):
     if not file.get('use_timestamp', False):
         return None
 
-    print("glob:")
-    for _ in glob.iglob(os.path.join(dname, f'{fname}*')):
-        print(_)
-
+    # find all versions of this file
     allversions = sorted(
         glob.iglob(os.path.join(dname, f'{fname}*')), 
         reverse=True)
-    path0 = allversions[0]         # first index is highest timestamp
     
+    # check there's at least one version
+    if len(allversions) == 0:
+        return None
+    
+    # first index is highest timestamp
+    path0 = allversions[0]
     _,timestamp,_ = _pathSplit(file, path0)
 
     return timestamp
