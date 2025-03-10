@@ -244,8 +244,6 @@ def mostRecentTimestamp(file):
     file:      (dict) File attributes. See file class.
     """
 
-    print("mostRecentTimestamp")
-
     import os
     import glob
     import numpy as np
@@ -281,8 +279,6 @@ def mostRecentPath(file):
 
     file:      (dict) File attributes. See file class.
     """
-
-    print("mostRecentPath")
 
     from pathlib import Path
 

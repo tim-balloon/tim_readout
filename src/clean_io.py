@@ -229,10 +229,6 @@ def _boardMostRecentFilePathList():
     '''Get a list of most recent board_io file paths (list[str]).
     '''
 
-    for f in board_io.file.fileList():
-        print(f)
-        print(base_io.mostRecentPath(f) )
-
     return [
         base_io.mostRecentPath(file) 
         for file in board_io.file.fileList()
