@@ -8,18 +8,14 @@
 
 # ============================================================================ #
 # Imports
-
-
-import argparse
 import os
+import argparse
 import datetime
 
 
 
 # ============================================================================ #
 # Main
-
-
 def main():
     """Run when this script directly accessed.
     """

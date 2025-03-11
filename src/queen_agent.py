@@ -796,6 +796,54 @@ class ReadoutAgent:
 
 
     # ======================================================================== #
+    # .cleanBoardDroneDirs
+    @ocs_agent.param('com_to', default=None, type=str)
+    @ocs_agent.param('silent', default=False, type=bool)
+    @ocs_agent.param('testing', default=True, type=bool)
+    @ocs_agent.param('leave_latest', default=True, type=bool)
+    @ocs_agent.param('ftype', default='.npy', type=str)
+    @ocs_agent.param('olderThanDate', default=None, type=str)
+    @ocs_agent.param('olderThanDaysAgo', default=None, type=str)
+    @ocs_agent.param('largerThanMB', default=None, type=str)
+    def cleanBoardDroneDirs(self, session, params):
+        """cleanBoardDroneDirs()
+
+        **Task** - Delete files in drones dir.
+
+        Args
+        -------
+        com_to: str
+            Drone to send command to in format bid.drid.
+            If None, will send to all drones.
+            Default is None.
+        leave_latest: (bool)
+            Whether to leave the most recent version of known files (in board_io).
+        ftype: (str) 
+            File extension to match.
+        olderThanDate: (str) 
+            Filter: Match files older than YYYY-mm-dd date.
+        olderThanDaysAgo: (int) 
+            Filter: Match files older than this number days ago.
+        largerThanMB: (int) 
+            Filter: Match files larger than this in MB.
+        testing: (bool) 
+            Whether to actually delete files or not.
+        """
+
+        arg_keys = ['leave_latest', 'ftype', 'testing',
+                    'olderThanDate', 'olderThanDaysAgo', 'largerThanMB']
+    
+        rtn = _sendAlcoveCommand(
+            com_str  = 'cleanBoardDroneDirs', 
+            com_to   = params['com_to'],
+            silent   = params['silent'], 
+            com_args = _buildComArgs(params, arg_keys))
+        
+        # return is a fail message str or number of clients int
+        return True, f"cleanBoardDroneDirs: {rtn}"
+
+
+    # ======================================================================== #
     # .timestreamOn
     @ocs_agent.param('com_to', default=None, type=str)
     @ocs_agent.param('silent', default=False, type=bool)
@@ -916,13 +964,26 @@ class ReadoutAgent:
         # return is a fail message str or number of clients int
         return True, f"setAccumLength: {rtn}"
 
-    
 
 
 
 # ============================================================================ #
 # INTERNAL FUNCTIONS
 # ============================================================================ #
+
+
+# ============================================================================ #
+# _buildComArgs
+def _buildComArgs(params, arg_keys):
+    '''Create com_args string.
+
+    Note: None valued args are not included in string.
+    '''
+
+    kv = ((k, params.get(k)) for k in arg_keys)
+    com_args = ", ".join(f"{k}={v}" for k, v in kv if v is not None)
+    
+    return com_args
 
 
 # ============================================================================ #
