@@ -6,6 +6,11 @@
 # CCAT Prime 2024
 # ============================================================================ #
 
+# import os
+import time
+import shutil
+import logging
+
 from ocs import ocs_agent, site_config
 # from twisted.internet.defer import Deferred, inlineCallbacks
 
@@ -60,6 +65,12 @@ def main(args=None):
     rt('userPacketInfo', readout.userPacketInfo)
     rt('setAtten', readout.setAtten)
     rt('setAccumLength', readout.setAccumLength)
+
+    # disk monitoring commands
+    rt('monitor_disk', readout.disk_monitor.monitor_disk, 
+       blocking=False)
+    rt('stop_disk_monitor', readout.disk_monitor.stop_monitoring, 
+       blocking=False)
     
     runner.run(agent, auto_reconnect=True)
 
@@ -67,7 +78,7 @@ def main(args=None):
 
 
 # ============================================================================ #
-# CLASS: ReadoutAgent
+# == CLASS: ReadoutAgent
 # ============================================================================ #
 class ReadoutAgent:
     """Readout agent interfacing with queen.
@@ -81,6 +92,7 @@ class ReadoutAgent:
 
     def __init__(self, agent):
         self.agent = agent
+        self.disk_monitor = DiskMonitor(agent)  # Instantiate DiskMonitor
 
 
     # ======================================================================== #
@@ -968,7 +980,82 @@ class ReadoutAgent:
 
 
 # ============================================================================ #
-# INTERNAL FUNCTIONS
+# == CLASS: DiskMonitor
+# ============================================================================ #
+class DiskMonitor:
+    def __init__(self, agent, mount_point="/", threshold_percent=80):
+        self.agent = agent
+        self.mount_point = mount_point
+        self.threshold_percent = threshold_percent
+        self._lock = agent.locks.acquire_timeout
+        # self.log = logging.getLogger(__name__)
+
+
+    # ======================================================================== #
+    # .monitorDisk
+    @ocs_agent.param('_')
+    def monitorDisk(self, session, params=None):
+        """monitor_disk()
+
+        **Process** - Monitors disk space and publishes data.
+
+        """
+
+        with self._lock(job='disk_monitor') as acquired:
+            if not acquired:
+                # self.log.warn("Could not start disk monitoring because another process is running.")
+                return False, "Could not acquire lock"
+
+            # self.log.info(f"Starting disk monitoring for {self.mount_point}")
+            self.take_data = True
+
+            while self.take_data:
+                try:
+                    total, used, free = shutil.disk_usage(self.mount_point)
+                    used_percent = (used / total) * 100
+
+                    data = {
+                        'timestamp': time.time(),
+                        'block_name': 'disk_usage',
+                        'data': {
+                            'total': total,
+                            'used': used,
+                            'free': free,
+                            'used_percent': used_percent,
+                            'mount_point': self.mount_point,
+                        },
+                    }
+
+                    session.app.publish_to_feed('disk_space', data)
+
+                    # if used_percent > self.threshold_percent:
+                    #     self.log.warning(f"Disk space usage above threshold ({self.threshold_percent}%): {used_percent:.2f}%")
+                    #     # Add your alert logic here
+
+                except FileNotFoundError:
+                    # self.log.error(f"Mount point '{self.mount_point}' not found.")
+                    return False, f"Mount point '{self.mount_point}' not found."
+                except Exception as e:
+                    # self.log.error(f"Error monitoring disk space: {e}")
+                    return False, f"Error monitoring disk space: {e}"
+
+                time.sleep(60)
+
+            return True, 'Disk monitoring exited cleanly.'
+
+
+    # ======================================================================== #
+    # .stopMonitoring
+    def stopMonitoring(self, session, params=None):
+        """Stop disk monitoring."""
+        self.take_data = False
+        return True, "Stopping disk monitoring"
+
+
+
+
+# ============================================================================ #
+# == INTERNAL ==
 # ============================================================================ #
 
 
@@ -1045,7 +1132,7 @@ def _sendAlcoveCommand(com_str, com_to=None, com_args=None, silent=False):
         return queen.alcoveCommand(
             com_num, args=com_args, ret_data=ret_data, 
             all_boards=True)
-    
+
 
 
 
