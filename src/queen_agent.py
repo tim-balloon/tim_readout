@@ -151,8 +151,20 @@ class DiskMonitor:
         self.agent = agent
         self.mount_point = mount_point
         self.threshold_percent = threshold_percent
-        self._lock = agent.locks.acquire_timeout
+        # self._lock = agent.locks.acquire_timeout
         # self.log = logging.getLogger(__name__)
+
+        # self._acq_proc_lock is held for the duration of the acq Process.
+        # Tasks that require acq to not be running, at all, should use
+        # this lock.
+        self._acq_proc_lock = TimeoutLock()
+
+        # self._lock is held by the acq Process only when accessing
+        # the hardware but released occasionally so that (short) Tasks
+        # may run.  Use a YieldingLock to guarantee that a waiting
+        # Task gets activated preferentially, even if the acq thread
+        # immediately tries to reacquire.
+        self._lock = YieldingLock(default_timeout=5)
 
 
     # ======================================================================== #
@@ -234,18 +246,6 @@ class ReadoutAgent:
     def __init__(self, agent):
         self.agent = agent
         self.disk_monitor = DiskMonitor(agent)  # Instantiate DiskMonitor
-
-        # self._acq_proc_lock is held for the duration of the acq Process.
-        # Tasks that require acq to not be running, at all, should use
-        # this lock.
-        self._acq_proc_lock = TimeoutLock()
-
-        # self._lock is held by the acq Process only when accessing
-        # the hardware but released occasionally so that (short) Tasks
-        # may run.  Use a YieldingLock to guarantee that a waiting
-        # Task gets activated preferentially, even if the acq thread
-        # immediately tries to reacquire.
-        self._lock = YieldingLock(default_timeout=5)
 
 
     # ======================================================================== #
