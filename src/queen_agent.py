@@ -146,84 +146,127 @@ class YieldingLock:
 # ============================================================================ #
 # == CLASS: DiskMonitor
 # ============================================================================ #
+# class DiskMonitor:
+#     def __init__(self, agent, mount_point="/", threshold_percent=80):
+#         self.agent = agent
+#         self.mount_point = mount_point
+#         self.threshold_percent = threshold_percent
+#         # self._lock = agent.locks.acquire_timeout
+#         # self.log = logging.getLogger(__name__)
+
+#         # self._acq_proc_lock is held for the duration of the acq Process.
+#         # Tasks that require acq to not be running, at all, should use
+#         # this lock.
+#         self._acq_proc_lock = TimeoutLock()
+
+#         # self._lock is held by the acq Process only when accessing
+#         # the hardware but released occasionally so that (short) Tasks
+#         # may run.  Use a YieldingLock to guarantee that a waiting
+#         # Task gets activated preferentially, even if the acq thread
+#         # immediately tries to reacquire.
+#         self._lock = YieldingLock(default_timeout=5)
+
+
+#     # ======================================================================== #
+#     # .monitorDisk
+#     @ocs_agent.param('_')
+#     def monitorDisk(self, session, params=None):
+#         """monitor_disk()
+
+#         **Process** - Monitors disk space and publishes data.
+
+#         """
+
+#         with self._lock(job='disk_monitor') as acquired:
+#             if not acquired:
+#                 # self.log.warn("Could not start disk monitoring because another process is running.")
+#                 return False, "Could not acquire lock"
+
+#             # self.log.info(f"Starting disk monitoring for {self.mount_point}")
+#             self.take_data = True
+
+#             while self.take_data:
+#                 try:
+#                     total, used, free = shutil.disk_usage(self.mount_point)
+#                     used_percent = (used / total) * 100
+
+#                     data = {
+#                         'timestamp': time.time(),
+#                         'block_name': 'disk_usage',
+#                         'data': {
+#                             'total': total,
+#                             'used': used,
+#                             'free': free,
+#                             'used_percent': used_percent,
+#                             'mount_point': self.mount_point,
+#                         },
+#                     }
+
+#                     session.app.publish_to_feed('disk_space', data)
+
+#                     # if used_percent > self.threshold_percent:
+#                     #     self.log.warning(f"Disk space usage above threshold ({self.threshold_percent}%): {used_percent:.2f}%")
+#                     #     # Add your alert logic here
+
+#                 except FileNotFoundError:
+#                     # self.log.error(f"Mount point '{self.mount_point}' not found.")
+#                     return False, f"Mount point '{self.mount_point}' not found."
+#                 except Exception as e:
+#                     # self.log.error(f"Error monitoring disk space: {e}")
+#                     return False, f"Error monitoring disk space: {e}"
+
+#                 time.sleep(60)
+
+#             return True, 'Disk monitoring exited cleanly.'
+
 class DiskMonitor:
-    def __init__(self, agent, mount_point="/", threshold_percent=80):
+    """Monitors disk space and publishes data.
+
+    Parameters:
+        agent (OCSAgent): OCSAgent object.
+        mountPoint (str): The path to monitor.
+        pollingInterval (int): Period between checks.
+
+    """
+
+    def __init__(self, agent, mountPoint="/", pollingInterval=60):
         self.agent = agent
-        self.mount_point = mount_point
-        self.threshold_percent = threshold_percent
-        # self._lock = agent.locks.acquire_timeout
-        # self.log = logging.getLogger(__name__)
-
-        # self._acq_proc_lock is held for the duration of the acq Process.
-        # Tasks that require acq to not be running, at all, should use
-        # this lock.
-        self._acq_proc_lock = TimeoutLock()
-
-        # self._lock is held by the acq Process only when accessing
-        # the hardware but released occasionally so that (short) Tasks
-        # may run.  Use a YieldingLock to guarantee that a waiting
-        # Task gets activated preferentially, even if the acq thread
-        # immediately tries to reacquire.
-        self._lock = YieldingLock(default_timeout=5)
+        self.mountPoint = mountPoint
+        self.pollingInterval = pollingInterval # s
 
 
     # ======================================================================== #
-    # .monitorDisk
+    # .start
     @ocs_agent.param('_')
-    def monitorDisk(self, session, params=None):
-        """monitor_disk()
+    def start(self, session, params=None):
 
-        **Process** - Monitors disk space and publishes data.
+        self.take_data = True
+        while self.take_data:
 
-        """
+            try:
+                total, used, free = shutil.disk_usage(self.mountPoint)
+                data = {
+                    'timestamp': time.time(),
+                    'block_name': 'disk_usage',
+                    'mount_point':self.mountPoint,
+                    'unit':'bytes',
+                    'data': {'total':total, 'used':used, 'free':free}
+                }
+                session.app.publish_to_feed('disk_space', data)
 
-        with self._lock(job='disk_monitor') as acquired:
-            if not acquired:
-                # self.log.warn("Could not start disk monitoring because another process is running.")
-                return False, "Could not acquire lock"
+            except FileNotFoundError:
+                return False, f"Mount point '{self.mount_point}' not found."
+            except Exception as e:
+                return False, f"Error monitoring disk space: {e}"
 
-            # self.log.info(f"Starting disk monitoring for {self.mount_point}")
-            self.take_data = True
+            time.sleep(int(self.pollingInterval))
 
-            while self.take_data:
-                try:
-                    total, used, free = shutil.disk_usage(self.mount_point)
-                    used_percent = (used / total) * 100
-
-                    data = {
-                        'timestamp': time.time(),
-                        'block_name': 'disk_usage',
-                        'data': {
-                            'total': total,
-                            'used': used,
-                            'free': free,
-                            'used_percent': used_percent,
-                            'mount_point': self.mount_point,
-                        },
-                    }
-
-                    session.app.publish_to_feed('disk_space', data)
-
-                    # if used_percent > self.threshold_percent:
-                    #     self.log.warning(f"Disk space usage above threshold ({self.threshold_percent}%): {used_percent:.2f}%")
-                    #     # Add your alert logic here
-
-                except FileNotFoundError:
-                    # self.log.error(f"Mount point '{self.mount_point}' not found.")
-                    return False, f"Mount point '{self.mount_point}' not found."
-                except Exception as e:
-                    # self.log.error(f"Error monitoring disk space: {e}")
-                    return False, f"Error monitoring disk space: {e}"
-
-                time.sleep(60)
-
-            return True, 'Disk monitoring exited cleanly.'
+        return True, 'Disk monitoring exited cleanly.'
 
 
     # ======================================================================== #
-    # .stopMonitoring
-    def stopMonitoring(self, session, params=None):
-        """Stop disk monitoring."""
+    # .stop
+    def stop(self, session, params=None):
         self.take_data = False
         return True, "Stopping disk monitoring"
 
@@ -237,10 +280,7 @@ class ReadoutAgent:
     """Readout agent interfacing with queen.
 
     Parameters:
-        agent (OCSAgent): OCSAgent object from :func:`ocs.ocs_agent.init_site_agent`.
-
-    Attributes:
-        
+        agent (OCSAgent): OCSAgent object.
     """
 
     def __init__(self, agent):
