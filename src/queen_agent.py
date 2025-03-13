@@ -65,6 +65,12 @@ def main(args=None):
 
 
 
+# disk monitor
+# temperature monitor
+# both function by pulling data from Redis
+# but we don't want that functionality here
+# so add to queen
+
 
 # ============================================================================ #
 # == CLASS: ReadoutAgent
