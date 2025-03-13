@@ -6,16 +6,8 @@
 # CCAT Prime 2024
 # ============================================================================ #
 
-# import os
-import time
-import shutil
-# import logging
-import threading
-from contextlib import contextmanager
-
 from ocs import ocs_agent, site_config
 # from twisted.internet.defer import Deferred, inlineCallbacks
-from ocs.ocs_twisted import TimeoutLock
 
 import queen
 import alcove
@@ -68,207 +60,8 @@ def main(args=None):
     rt('userPacketInfo', readout.userPacketInfo)
     rt('setAtten', readout.setAtten)
     rt('setAccumLength', readout.setAccumLength)
-
-    # disk monitoring commands
-    rt('monitor_disk', readout.disk_monitor.monitor_disk, 
-       blocking=False)
-    rt('stop_disk_monitor', readout.disk_monitor.stop_monitoring, 
-       blocking=False)
     
     runner.run(agent, auto_reconnect=True)
-
-
-
-
-# ============================================================================ #
-# == CLASS: YieldingLock
-# ============================================================================ #
-class YieldingLock:
-    """A lock protected by a lock.  This braided arrangement guarantees
-    that a thread waiting on the lock will get priority over a thread
-    that has just released the lock and wants to reacquire it.
-
-    The typical use case is a Process that wants to hold the lock as
-    much as possible, but occasionally release the lock (without
-    sleeping for long) so another thread can access a resource.  The
-    method release_and_acquire() is provided to make this a one-liner.
-
-    """
-
-    def __init__(self, default_timeout=None):
-        self.job = None
-        self._next = threading.Lock()
-        self._active = threading.Lock()
-        self._default_timeout = default_timeout
-
-    # ======================================================================== #
-    # .acquire
-    def acquire(self, timeout=None, job=None):
-        if timeout is None:
-            timeout = self._default_timeout
-        if timeout is None or timeout == 0.:
-            kw = {'blocking': False}
-        else:
-            kw = {'blocking': True, 'timeout': timeout}
-        result = False
-        if self._next.acquire(**kw):
-            if self._active.acquire(**kw):
-                self.job = job
-                result = True
-            self._next.release()
-        return result
-
-    def release(self):
-        self.job = None
-        return self._active.release()
-
-    def release_and_acquire(self, timeout=None):
-        job = self.job
-        self.release()
-        return self.acquire(timeout=timeout, job=job)
-
-    # ======================================================================== #
-    # .acquire_timeout
-    @contextmanager
-    def acquire_timeout(self, timeout=None, job='unnamed'):
-        result = self.acquire(timeout=timeout, job=job)
-        if result:
-            try:
-                yield result
-            finally:
-                self.release()
-        else:
-            yield result
-
-
-
-
-# ============================================================================ #
-# == CLASS: DiskMonitor
-# ============================================================================ #
-# class DiskMonitor:
-#     def __init__(self, agent, mount_point="/", threshold_percent=80):
-#         self.agent = agent
-#         self.mount_point = mount_point
-#         self.threshold_percent = threshold_percent
-#         # self._lock = agent.locks.acquire_timeout
-#         # self.log = logging.getLogger(__name__)
-
-#         # self._acq_proc_lock is held for the duration of the acq Process.
-#         # Tasks that require acq to not be running, at all, should use
-#         # this lock.
-#         self._acq_proc_lock = TimeoutLock()
-
-#         # self._lock is held by the acq Process only when accessing
-#         # the hardware but released occasionally so that (short) Tasks
-#         # may run.  Use a YieldingLock to guarantee that a waiting
-#         # Task gets activated preferentially, even if the acq thread
-#         # immediately tries to reacquire.
-#         self._lock = YieldingLock(default_timeout=5)
-
-
-#     # ======================================================================== #
-#     # .monitorDisk
-#     @ocs_agent.param('_')
-#     def monitorDisk(self, session, params=None):
-#         """monitor_disk()
-
-#         **Process** - Monitors disk space and publishes data.
-
-#         """
-
-#         with self._lock(job='disk_monitor') as acquired:
-#             if not acquired:
-#                 # self.log.warn("Could not start disk monitoring because another process is running.")
-#                 return False, "Could not acquire lock"
-
-#             # self.log.info(f"Starting disk monitoring for {self.mount_point}")
-#             self.take_data = True
-
-#             while self.take_data:
-#                 try:
-#                     total, used, free = shutil.disk_usage(self.mount_point)
-#                     used_percent = (used / total) * 100
-
-#                     data = {
-#                         'timestamp': time.time(),
-#                         'block_name': 'disk_usage',
-#                         'data': {
-#                             'total': total,
-#                             'used': used,
-#                             'free': free,
-#                             'used_percent': used_percent,
-#                             'mount_point': self.mount_point,
-#                         },
-#                     }
-
-#                     session.app.publish_to_feed('disk_space', data)
-
-#                     # if used_percent > self.threshold_percent:
-#                     #     self.log.warning(f"Disk space usage above threshold ({self.threshold_percent}%): {used_percent:.2f}%")
-#                     #     # Add your alert logic here
-
-#                 except FileNotFoundError:
-#                     # self.log.error(f"Mount point '{self.mount_point}' not found.")
-#                     return False, f"Mount point '{self.mount_point}' not found."
-#                 except Exception as e:
-#                     # self.log.error(f"Error monitoring disk space: {e}")
-#                     return False, f"Error monitoring disk space: {e}"
-
-#                 time.sleep(60)
-
-#             return True, 'Disk monitoring exited cleanly.'
-
-class DiskMonitor:
-    """Monitors disk space and publishes data.
-
-    Parameters:
-        agent (OCSAgent): OCSAgent object.
-        mountPoint (str): The path to monitor.
-        pollingInterval (int): Period between checks.
-
-    """
-
-    def __init__(self, agent, mountPoint="/", pollingInterval=60):
-        self.agent = agent
-        self.mountPoint = mountPoint
-        self.pollingInterval = pollingInterval # s
-
-
-    # ======================================================================== #
-    # .start
-    @ocs_agent.param('_')
-    def start(self, session, params=None):
-
-        self.take_data = True
-        while self.take_data:
-
-            try:
-                total, used, free = shutil.disk_usage(self.mountPoint)
-                data = {
-                    'timestamp': time.time(),
-                    'block_name': 'disk_usage',
-                    'mount_point':self.mountPoint,
-                    'unit':'bytes',
-                    'data': {'total':total, 'used':used, 'free':free}
-                }
-                session.app.publish_to_feed('disk_space', data)
-
-            except FileNotFoundError:
-                return False, f"Mount point '{self.mount_point}' not found."
-            except Exception as e:
-                return False, f"Error monitoring disk space: {e}"
-
-            time.sleep(int(self.pollingInterval))
-
-        return True, 'Disk monitoring exited cleanly.'
-
-
-    # ======================================================================== #
-    # .stop
-    def stop(self, session, params=None):
-        self.take_data = False
-        return True, "Stopping disk monitoring"
 
 
 
@@ -285,7 +78,6 @@ class ReadoutAgent:
 
     def __init__(self, agent):
         self.agent = agent
-        self.disk_monitor = DiskMonitor(agent)  # Instantiate DiskMonitor
 
 
     # ======================================================================== #
