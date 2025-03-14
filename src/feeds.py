@@ -101,7 +101,7 @@ def getFeedTemps(r, p, handler):
 # ============================================================================ #
 # getFeedSpc
 def getFeedSpc(r, p, handler):
-    """Get all drones feeds: Free space remaining, in bytes.
+    """Get all drones feeds: Free space remaining, in GB.
     """
 
     keyvals = _getKeyValsMatching(r, _wilds()['spc'])
@@ -129,5 +129,6 @@ def setFeedSpc(r, interval):
     """
 
     total, used, free = shutil.disk_usage("/") # bytes
+    free = round(free / (1024 ** 3), 4) # GB, round to 4 digits
 
     _setKeyVal(r, _keys()['spc'], free, 2*interval)
