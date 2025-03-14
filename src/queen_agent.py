@@ -87,7 +87,7 @@ class ReadoutAgent:
 
 
     # ======================================================================== #
-    # getKeyValue
+    # .getKeyValue
     @ocs_agent.param('key', type=str)
     def getKeyValue(self, session, params):
         """getKeyValue()
@@ -104,7 +104,7 @@ class ReadoutAgent:
 
 
     # ======================================================================== #
-    # setKeyValue
+    # .setKeyValue
     @ocs_agent.param('key', type=str)
     @ocs_agent.param('value', type=str)
     def setKeyValue(self, session, params):

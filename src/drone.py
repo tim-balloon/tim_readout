@@ -14,6 +14,7 @@
 
 import os
 import sys
+import time
 import redis
 import queue
 import shutil
@@ -27,6 +28,7 @@ import threading
 import alcove
 from config import board as cfg_b
 import redis_channels as chans
+import feeds
 
 
 
@@ -52,7 +54,7 @@ def main():
     # modify the configs as necessary
     _modifyConfig(args)
 
-    # setup a drone sepcific dir in /tmp
+    # setup a drone specific dir in /tmp
     _setupTmpDir()
 
     # load firmware to config
@@ -66,7 +68,8 @@ def main():
 
     # run loop
     command_queue = queue.Queue()
-    listenMode(r, p, chans.subList(cfg_b.bid, cfg_b.drid), command_queue)
+    listenMode(r, p, chans.subList(cfg_b.bid, cfg_b.drid), 
+               command_queue, cfg_b.interval_feeds)
 
             
 
@@ -194,12 +197,13 @@ def connectRedis():
 
 
 # ============================================================================ #
-# Execution Thread
-def execute_commands(r, command_queue):
-    '''Processes commands one by one
+# _loopExecuteCommands
+def _loopExecuteCommands(r, command_queue):
+    '''Loop to listen for and sequentially execute commands.
     '''
 
     while True:
+
         chan_str, payload = command_queue.get()  # Get next command from queue
         try:
             com_num, ret_data, args, kwargs = payloadToCom(payload)
@@ -213,21 +217,38 @@ def execute_commands(r, command_queue):
 
 
 # ============================================================================ #
-# Listener Function
-def listenMode(r, p, chan_subs, command_queue):
+# _loopUpdateFeeds
+def _loopUpdateFeeds(r, interval):
+    """Loop to update feeds.
+    """
+
+    while True:
+
+        feeds.setFeedSpc(r, interval)   # free disk space
+        feeds.setFeedTemps(r, interval) # temperatures 
+
+        time.sleep(interval)
+
+
+# ============================================================================ #
+# listenMode
+def listenMode(r, p, chan_subs, command_queue, interval_feeds):
     '''
     '''
 
-    p.psubscribe(chan_subs)  # Subscribe to channels
-
-    last_chan_str = ''
-
-    # Start execution thread
+    # Start feeds thread
     threading.Thread(
-        target=execute_commands, args=(r,command_queue), daemon=True
+        target=_loopUpdateFeeds, args=(r,interval_feeds), daemon=True
         ).start()
 
-    # Main loop: listens for messages and adds them to the queue
+    # Start commands thread
+    threading.Thread(
+        target=_loopExecuteCommands, args=(r,command_queue), daemon=True
+        ).start()
+
+    # Command loop: listens for messages and adds them to the queue
+    p.psubscribe(chan_subs)  # Subscribe to channels
+    last_chan_str = ''
     for new_message in p.listen():
         if new_message['type'] != 'pmessage':
             continue  # Ignore non-command messages
@@ -245,8 +266,6 @@ def listenMode(r, p, chan_subs, command_queue):
 
 
 '''
-# ============================================================================ #
-# listenMode
 def listenMode(r, p, chan_subs):
     p.psubscribe(chan_subs)             # channels to listen to
 

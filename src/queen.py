@@ -11,24 +11,20 @@
 # IMPORTS
 # ============================================================================ #
 
-import os
-import redis
-import numpy as np
-import logging
-# import uuid
-import pickle
-from datetime import datetime
-# import tempfile
 import time
-import signal
+import redis
+import pickle
+import logging
 
 from config import queen as cfg
 from config import parentDir
 
-import queen_commands.control_io as io
+import src.feeds as feeds
 import redis_channels as chans
-import queen_commands.test_functions as test
 import drone_control as drone_control
+import queen_commands.control_io as io
+import queen_commands.test_functions as test
+
 
 
 
@@ -55,6 +51,7 @@ def _com():
         6:getClientListLight,
         7:drone_control.action,
         8:monitorMode,
+        9:monitorFeeds,
         10:test.tonePowerTest,
         11:test.adriansNoiseTest,
         12:test.targetSweepPowerTest,
@@ -257,6 +254,41 @@ def monitorMode():
     while True:
         monitorAction(r)
         time.sleep(cfg.monitor_interval) 
+
+
+# ============================================================================ #
+#  monitorFeeds
+def monitorFeeds(interval=None, handler=None):
+    """
+
+    interval (int or None): Seconds between polls.
+        If None then only performs once.
+    handler (func(str, dict)): Function to handle feed data on each poll.
+        Format is handler(label, data_dict).
+    """
+
+    # check and cast interval
+    if interval is not None:
+        interval = max(1, int(interval)) # min 1 s
+
+    # hold a Redis connection
+    r,p = _connectRedis() # any problems with holding this for a long time?
+    
+    # define a default handler if none was given
+    if handler is None:
+        def handler(label, data):
+            print(f"{label}: {data}")
+        
+    # monitor loop
+    print(f'Starting drone feed monitor mode (polling every {interval} s).') 
+    while True:
+
+        feeds.getFeedSpc(r, p, handler)
+        feeds.getFeedTemps(r, p, handler)
+
+        if interval is None:
+            break # only do one poll
+        time.sleep(interval) # sleep until next poll
 
 
 # ============================================================================ #
