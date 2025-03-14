@@ -89,7 +89,7 @@ def getFeedTemps(r, p, handler):
     """
 
     keyvals = _getKeyValsMatching(r, _wilds()['temp'])
-    handler('drone_temperatures', keyvals)
+    handler('drone_temperatures_C', keyvals)
     
     # data = {}
     # for key in keyvals:
@@ -105,7 +105,7 @@ def getFeedSpc(r, p, handler):
     """
 
     keyvals = _getKeyValsMatching(r, _wilds()['spc'])
-    handler('drone_free_spaces', keyvals)
+    handler('drone_free_spaces_GB', keyvals)
 
 
 # ============================================================================ #
