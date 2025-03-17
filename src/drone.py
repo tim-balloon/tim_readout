@@ -218,22 +218,20 @@ def _loopExecuteCommands(r, command_queue):
 
 # ============================================================================ #
 # _loopUpdateFeeds
-def _loopUpdateFeeds(r, interval, print):
+def _loopUpdateFeeds(r, interval):
     """Loop to update feeds.
     """
 
     while True:
 
         try:
-            print(f"_loopUpdateFeeds, interval={interval}")
-
             feeds.setFeedSpc(r, interval)   # free disk space
             feeds.setFeedTemps(r, interval) # temperatures 
 
-            time.sleep(5)
-            # time.sleep(interval)
+            time.sleep(interval)
+
         except Exception as e:
-            print(f"ERROR in _loopUpdateFeeds: {e}")
+            print(f"ERROR in drone.py._loopUpdateFeeds: {e}")
             time.sleep(5)  # Prevent crashing loop from overloading CPU
 
 
@@ -245,7 +243,7 @@ def listenMode(r, p, chan_subs, command_queue, interval_feeds):
 
     # Start feeds thread
     threading.Thread(
-        target=_loopUpdateFeeds, args=(r,interval_feeds,print), daemon=True
+        target=_loopUpdateFeeds, args=(r,interval_feeds), daemon=True
         ).start()
 
     # Start commands thread
