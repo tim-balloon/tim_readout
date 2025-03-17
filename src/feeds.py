@@ -114,7 +114,7 @@ def setFeedTemps(r, interval):
     """Update the ps and pl temperature feeds.
     """
 
-    temps = utils.boardTemps()
+    temps = utils.board_temps()
     temp_ps = temps['ps_processor']
     temp_pl = temps['pl_fabric']
 
