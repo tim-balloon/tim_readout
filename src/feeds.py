@@ -73,10 +73,10 @@ def _setKeyVal(r, key, val, expire=None):
     """Set a val for a key, with optional expiry, in s.
     """
 
+    r.set(key, val)
+
     if expire is not None:
-        r.set(key, val, ex=expire)
-    else:
-        r.set(key, val)
+        r.expire(key, expire)
 
 
 # ============================================================================ #
