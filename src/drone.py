@@ -224,12 +224,17 @@ def _loopUpdateFeeds(r, interval, print):
 
     while True:
 
-        print(f"_loopUpdateFeeds, interval={interval}")
+        try:
+            print(f"_loopUpdateFeeds, interval={interval}")
 
-        feeds.setFeedSpc(r, interval)   # free disk space
-        feeds.setFeedTemps(r, interval) # temperatures 
+            feeds.setFeedSpc(r, interval)   # free disk space
+            feeds.setFeedTemps(r, interval) # temperatures 
 
-        time.sleep(interval)
+            time.sleep(5)
+            # time.sleep(interval)
+        except Exception as e:
+            print(f"ERROR in _loopUpdateFeeds: {e}")
+            time.sleep(5)  # Prevent crashing loop from overloading CPU
 
 
 # ============================================================================ #
