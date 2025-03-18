@@ -5,6 +5,7 @@
 # CCAT Prime 2025
 # ============================================================================ #
 
+import time
 import shutil
 
 import alcove_commands.board_utilities as utils
@@ -98,9 +99,14 @@ def getFeedTemps(r, handler):
     pl = programmable logic
     """
 
-    keyvals = _getKeyValsMatching(r, _wilds()['temp'])
-    handler('drone_temperatures_C', {'data':keyvals})
-    
+    data = {
+        'timestamp': time.time(),
+        'block_name': f'{cfg_b.bid}_{cfg_b.drid}', # id
+        'data': _getKeyValsMatching(r, _wilds()['temp']) # keyvals
+    }
+
+    handler('drone_temperatures_C', data)
+
     # data = {}
     # for key in keyvals:
     #     _,id,sensor = key.split(':') 
@@ -114,7 +120,12 @@ def getFeedSpc(r, handler):
     """Get all drones feeds: Free space remaining, in GB.
     """
 
-    keyvals = _getKeyValsMatching(r, _wilds()['spc'])
+    data = {
+        'timestamp': time.time(),
+        'block_name': f'{cfg_b.bid}_{cfg_b.drid}', # id
+        'data': _getKeyValsMatching(r, _wilds()['spc']) # keyvals
+    }
+
     handler('drone_free_spaces_GB', {'data':keyvals})
 
 
