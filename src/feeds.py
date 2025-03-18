@@ -105,6 +105,8 @@ def getFeedTemps(r, handler):
         'data': _getKeyValsMatching(r, _wilds()['temp']) # keyvals
     }
 
+    print(data)
+
     handler('drone_temperatures_C', data)
 
     # data = {}
