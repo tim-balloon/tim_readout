@@ -126,7 +126,7 @@ def getFeedSpc(r, handler):
         'data': _getKeyValsMatching(r, _wilds()['spc']) # keyvals
     }
 
-    handler('drone_free_spaces_GB', {'data':keyvals})
+    handler('drone_free_spaces_GB', data)
 
 
 # ============================================================================ #
