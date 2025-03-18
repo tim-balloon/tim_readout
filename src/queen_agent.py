@@ -35,7 +35,8 @@ def main(args=None):
     rt('getClientList', readout.getClientList)
     rt('getClientListLight', readout.getClientListLight)
     rt('action', readout.action) # drone control actions
-    # TODO: command to start temp and disk space monitoring
+    rt('monitorFeeds', readout.monitorFeeds)
+    rt('stopMonitorFeeds', readout.stopMonitorFeeds)
 
     # drone commands
     rt('setNCLO', readout.setNCLO)
