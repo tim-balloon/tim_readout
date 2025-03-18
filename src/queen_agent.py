@@ -65,8 +65,20 @@ def main(args=None):
     rt('setAtten', readout.setAtten)
     rt('setAccumLength', readout.setAccumLength)
 
-    
-    
+    # agent feeds
+    agent.register_feed(
+        'drone_free_spaces_GB',
+        record=True,
+        agg_params={'frame_length': 60}, # 60 s data polling
+        buffer_time=5)  # Allow a small buffer
+
+    agent.register_feed(
+        'drone_temperatures_C',
+        record=True,
+        agg_params={'frame_length': 60}, # 60 s data polling
+        buffer_time=5)  # Allow a small buffer
+        
+        
     runner.run(agent, auto_reconnect=True)
 
 
