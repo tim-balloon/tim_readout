@@ -35,7 +35,7 @@ def main(args=None):
     rt('getClientList', readout.getClientList)
     rt('getClientListLight', readout.getClientListLight)
     rt('action', readout.action) # drone control actions
-    rt('monitorFeeds', readout.monitorFeeds)
+    rt('monitorFeeds', readout.monitorFeeds, b=False)
     rt('stopMonitorFeeds', readout.stopMonitorFeeds)
 
     # drone commands
