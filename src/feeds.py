@@ -20,9 +20,13 @@ def _wilds():
     """
 
     wilds = {
-        'temp' : f'temp:*',
-        'spc'  : f'spc:*',
+        'temp' : f'temp_*',
+        'spc'  : f'spc_*',
     }
+    # wilds = {
+    #     'temp' : f'temp:*',
+    #     'spc'  : f'spc:*',
+    # }
 
     return wilds
 
@@ -33,13 +37,19 @@ def _keys():
     """Feed keys.
     """
 
-    id = f'{cfg_b.bid}.{cfg_b.drid}'
+    id = f'{cfg_b.bid}_{cfg_b.drid}'
 
     keys = {
-        'temp_ps' : f'temp:{id}:ps', # e.g. 'temp:1.1:ps'
-        'temp_pl' : f'temp:{id}:pl', # e.g. 'temp:1.1:pl'
-        'spc'     : f'spc:{id}',     # e.g. 'spc:1.1'
+        'temp_ps' : f'temp_{id}_ps', # e.g. 'temp_1_1_ps'
+        'temp_pl' : f'temp_{id}_pl', # e.g. 'temp_1_1_pl'
+        'spc'     : f'spc_{id}',     # e.g. 'spc_1_1'
     }
+
+    # keys = {
+    #     'temp_ps' : f'temp:{id}:ps', # e.g. 'temp:1.1:ps'
+    #     'temp_pl' : f'temp:{id}:pl', # e.g. 'temp:1.1:pl'
+    #     'spc'     : f'spc:{id}',     # e.g. 'spc:1.1'
+    # }
 
     return keys
 
@@ -90,7 +100,6 @@ def getFeedTemps(r, handler):
 
     keyvals = _getKeyValsMatching(r, _wilds()['temp'])
     handler('drone_temperatures_C', {'data':keyvals})
-    # handler('drone_temperatures_C', keyvals)
     
     # data = {}
     # for key in keyvals:
@@ -107,7 +116,6 @@ def getFeedSpc(r, handler):
 
     keyvals = _getKeyValsMatching(r, _wilds()['spc'])
     handler('drone_free_spaces_GB', {'data':keyvals})
-    # handler('drone_free_spaces_GB', keyvals)
 
 
 # ============================================================================ #
