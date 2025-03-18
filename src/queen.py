@@ -19,7 +19,7 @@ import logging
 from config import queen as cfg
 from config import parentDir
 
-import src.feeds as feeds
+import feeds
 import redis_channels as chans
 import drone_control as drone_control
 import queen_commands.control_io as io
