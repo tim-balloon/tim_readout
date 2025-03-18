@@ -6,6 +6,8 @@
 # CCAT Prime 2024
 # ============================================================================ #
 
+import time
+
 from ocs import ocs_agent, site_config
 # from twisted.internet.defer import Deferred, inlineCallbacks
 
@@ -32,7 +34,8 @@ def main(args=None):
     rt('setKeyValue', readout.setKeyValue)
     rt('getClientList', readout.getClientList)
     rt('getClientListLight', readout.getClientListLight)
-    rt('action', readout.action)
+    rt('action', readout.action) # drone control actions
+    # TODO: command to start temp and disk space monitoring
 
     # drone commands
     rt('setNCLO', readout.setNCLO)
@@ -60,16 +63,55 @@ def main(args=None):
     rt('userPacketInfo', readout.userPacketInfo)
     rt('setAtten', readout.setAtten)
     rt('setAccumLength', readout.setAccumLength)
+
+    
     
     runner.run(agent, auto_reconnect=True)
 
 
 
-# disk monitor
-# temperature monitor
-# both function by pulling data from Redis
-# but we don't want that functionality here
-# so add to queen
+
+# ============================================================================ #
+# == CLASS: FeedMonitor
+# ============================================================================ #
+class FeedMonitor:
+    """
+
+    Parameters:
+    """
+
+    def __init__(self):
+        self.take_data = False
+        self.r = None
+
+
+    # ======================================================================== #
+    # FeedMonitor.start
+    def start(self, session, interval):
+
+        self.take_data = True
+
+        def handler(label, data):
+            session.app.publish_to_feed(label, data)
+
+        while self.take_data:
+            self.r = queen.pollFeeds(handler, self.r)
+            time.sleep(interval)
+
+        return True, 'FeedMonitor: Exited.'
+        
+    
+    # ======================================================================== #
+    # FeedMonitor.stop
+    def stop(self):
+
+        if self.take_data:
+            self.take_data = False
+            return True,  'FeedMonitor: Stopping...'
+        else:
+            return False, 'FeedMonitor: Not currently running.'
+
+
 
 
 # ============================================================================ #
@@ -83,7 +125,10 @@ class ReadoutAgent:
     """
 
     def __init__(self, agent):
+
         self.agent = agent
+
+        self.feedMonitor = FeedMonitor()
 
 
     # ======================================================================== #
@@ -168,6 +213,34 @@ class ReadoutAgent:
         bid, drid = drone_control._bid_drid(params['com_to'])
 
         return True, f"action: {drone_control.action(action, bid, drid)}"
+    
+
+    # ======================================================================== #
+    # .monitorFeeds
+    @ocs_agent.param('interval', default=60, type=int)
+    def monitorFeeds(self, session, params):
+        """monitorFeeds()
+
+        **Task** - Start monitoring drone HK data (temp, disk space).
+
+        Args
+        -------
+        interval: int
+            Interval to continue polling data, in seconds.
+        """
+
+        return self.feedMonitor.start(session, interval=params['interval'])
+
+
+    # ======================================================================== #
+    # .stopMonitorFeeds
+    def stopMonitorFeeds(self, session, params):
+        """stopMonitorFeeds()
+
+        **Task** - Stop monitoring drone HK data feeds.
+        """
+
+        return self.feedMonitor.stop()
 
 
     # ======================================================================== #

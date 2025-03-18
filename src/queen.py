@@ -256,6 +256,7 @@ def monitorMode():
         time.sleep(cfg.monitor_interval) 
 
 
+'''
 # ============================================================================ #
 #  monitorFeeds
 def monitorFeeds(interval=None, handler=None):
@@ -278,7 +279,7 @@ def monitorFeeds(interval=None, handler=None):
     if handler is None:
         def handler(label, data):
             print(f"{label}: {data}")
-        
+
     # monitor loop
     print(f'Starting drone feed monitor mode (polling every {interval} s).') 
     while True:
@@ -289,6 +290,26 @@ def monitorFeeds(interval=None, handler=None):
         if interval is None:
             break # only do one poll
         time.sleep(interval) # sleep until next poll
+'''
+
+
+# ============================================================================ #
+#  pollFeeds
+def pollFeeds(handler=None, r=None):
+
+    # establish a Redis connection unless one is passed in
+    if r is None:
+        r,p = _connectRedis()
+
+    # define a default handler if none was given
+    if handler is None:
+        def handler(label, data):
+            print(f"{label}: {data}")
+
+    feeds.getFeedSpc(r, handler)
+    feeds.getFeedTemps(r, handler)
+
+    return r
 
 
 # ============================================================================ #

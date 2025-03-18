@@ -81,7 +81,7 @@ def _setKeyVal(r, key, val, expire=None):
 
 # ============================================================================ #
 # getFeedTemps
-def getFeedTemps(r, p, handler):
+def getFeedTemps(r, handler):
     """Get all drones feeds: Temperatures (pl and ps), in celsius.
 
     ps = processing system
@@ -100,7 +100,7 @@ def getFeedTemps(r, p, handler):
     
 # ============================================================================ #
 # getFeedSpc
-def getFeedSpc(r, p, handler):
+def getFeedSpc(r, handler):
     """Get all drones feeds: Free space remaining, in GB.
     """
 

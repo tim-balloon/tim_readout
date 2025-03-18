@@ -6,6 +6,7 @@
 # CCAT Prime 2023  
 # ============================================================================ #
 
+import time
 # import argparse
 from ocs.ocs_client import OCSClient
 
@@ -21,10 +22,14 @@ def testFunc(func, msg1):
     print(" Done.")
     print(rtn)
 
-testFunc(queen_agent.getClientList(), "Getting queen client list...")
-testFunc(queen_agent.setNCLO(com_to='1.1', f_lo=500), "Sending setNCLO command...")
-testFunc(queen_agent.writeNewVnaComb(com_to='1.1'), "Sending writeNewVnaComb command...")
-testFunc(queen_agent.vnaSweep(com_to='1.1'), "Sending vnaSweep command...")
+testFunc(queen_agent.monitorFeeds(interval=10), "Starting drone feed monitoring...")
+time.sleep(30)
+testFunc(queen_agent.stopMonitorFeeds(), "Stopping drone feed monitoring...")
+
+# testFunc(queen_agent.getClientList(), "Getting queen client list...")
+# testFunc(queen_agent.setNCLO(com_to='1.1', f_lo=500), "Sending setNCLO command...")
+# testFunc(queen_agent.writeNewVnaComb(com_to='1.1'), "Sending writeNewVnaComb command...")
+# testFunc(queen_agent.vnaSweep(com_to='1.1'), "Sending vnaSweep command...")
 
 
 
