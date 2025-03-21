@@ -1,9 +1,17 @@
+# ============================================================================ #
+# init.py
+# Board side initialization script to be called after boot-up.
+# James Burgoyne jburgoyne@phas.ubc.ca
+# CCAT/FYST 2025
+# ============================================================================ #
+
 from pynq import Overlay
 import xrfclk
 import xrfdc
 
-import sys
 import os
+import sys
+import subprocess
 
 # Determine the directory where the script is located
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -12,37 +20,44 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(1, os.path.join(os.path.dirname(script_dir), 'src'))
 
 import ip_addr
-from config import board as cfg
+from config import board as cfg_b
 
-import subprocess
+
 
 
 try:
 
-# ============================================================================ #
-# Firmware, PTP, clocks
+
+
+
+    # ======================================================================== #
+    # Firmware, PTP, clocks
+    # ======================================================================== #
 
     # assuming cfg.firmware_file is a local filename
-    firmware_file = os.path.join(cfg.dir_root, cfg.firmware_file)
+    firmware_file = os.path.join(cfg_b.dir_root, cfg_b.firmware_file)
     firmware = Overlay(firmware_file, ignore_version=True)
 
     clksrc = 409.6 # MHz
     xrfclk.set_all_ref_clks(clksrc)
 
     # Bring up the PTP interface
-    subprocess.run(["ifconfig", cfg.ptp_interface, cfg.ptp_ip_address, "up"])
+    subprocess.run(["ifconfig", cfg_b.ptp_interface, cfg_b.ptp_ip_address, "up"])
 
     # Pass the MAC address and interface to the PTP and PHC scripts
     run_ptp4l_path = os.path.join(script_dir, 'run_ptp4l.sh')
-    subprocess.run([run_ptp4l_path, cfg.ptp_interface, cfg.ptp_mac_address])
+    subprocess.run([run_ptp4l_path, cfg_b.ptp_interface, cfg_b.ptp_mac_address])
     run_phc2sys_path = os.path.join(script_dir, 'run_phc2sys.sh')
-    subprocess.run([run_phc2sys_path, cfg.ptp_interface])
+    subprocess.run([run_phc2sys_path, cfg_b.ptp_interface])
 
     print("PTP configured")
 
 
-# ============================================================================ #
-# Digital Mixers
+
+
+    # ======================================================================== #
+    # Digital Mixers
+    # ======================================================================== #
 
     lofreq = 1000.000 # [MHz]
     rf_data_conv = firmware.usp_rf_data_converter_0
@@ -67,8 +82,10 @@ try:
 
 
 
-# ============================================================================ #
-# Ethernet
+
+    # ======================================================================== #
+    # Ethernet
+    # ======================================================================== #
 
     dest_ip = ip_addr.tIP_destination(sep='', asHex=True)
     dest_mac = ip_addr.mac_destination(sep='')
@@ -88,6 +105,17 @@ try:
     ethRegsPortWrite(firmware.ethWrapPort1.eth_regs_0, src_ip_int32=int(src_ip_2, 16))
     ethRegsPortWrite(firmware.ethWrapPort2.eth_regs_0, src_ip_int32=int(src_ip_3, 16))
     ethRegsPortWrite(firmware.ethWrapPort3.eth_regs_0, src_ip_int32=int(src_ip_4, 16))
+
+
+
+
+    # ======================================================================== #
+    # Packets
+    # ======================================================================== #
+
+    # setAccumLen for drone 1 - all others are timed from this
+    firmware.chan1.write(0x08, cfg_b.accum_len)
+
 
 
 

@@ -14,8 +14,7 @@ bid = 1    # should match physical id on board
 
 # ============================================================================ #
 # Firmware
-# firmware_file = '../init/tetra_v7p1_impl_5.bit'
-firmware_file = 'init/tetra_v13p9.xsa'
+firmware_file = 'init/tetra_v13p11.xsa'
 
 
 # ============================================================================ #
@@ -37,7 +36,7 @@ ptp_ip_address  = "192.168.2.4"
 # ============================================================================ #
 # timestream configuration
 # UDP data ethernet destination
-udp_dest_ip = '192.168.3.40'
+udp_dest_ip  = '192.168.3.40'
 udp_dest_mac = '34:97:f6:52:c4:bb'
 
 # UDP data ethernet origin, drones 1-4
@@ -45,7 +44,7 @@ udp_ori_ip_1 = '192.168.3.50'
 udp_ori_ip_2 = '192.168.3.51'
 udp_ori_ip_3 = '192.168.3.52'
 udp_ori_ip_4 = '192.168.3.53'
-udp_ori_mac = 'c0:ff:ee:c0:ff:ee'
+udp_ori_mac  = 'c0:ff:ee:c0:ff:ee'
 
 
 # ============================================================================ #
