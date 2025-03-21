@@ -95,16 +95,17 @@ try:
     src_ip_4 = ip_addr.tIP_origin(4, sep='', asHex=True)
     src_mac = ip_addr.mac_origin(sep='')
 
-    def ethRegsPortWrite(eth_regs, src_ip_int32): 
-        eth_regs.write( 0x00, int(src_mac[4:], 16))
-        eth_regs.write( 0x04, (int(dest_mac[-4:], 16)<<16) + int(src_mac[:4], 16))
-        eth_regs.write( 0x08, int(dest_mac[:-4], 16))
-        eth_regs.write( 0x0c, src_ip_int32)
-        eth_regs.write( 0x10, int(dest_ip, 16))
-    ethRegsPortWrite(firmware.ethWrapPort0.eth_regs_0, src_ip_int32=int(src_ip_1, 16))
-    ethRegsPortWrite(firmware.ethWrapPort1.eth_regs_0, src_ip_int32=int(src_ip_2, 16))
-    ethRegsPortWrite(firmware.ethWrapPort2.eth_regs_0, src_ip_int32=int(src_ip_3, 16))
-    ethRegsPortWrite(firmware.ethWrapPort3.eth_regs_0, src_ip_int32=int(src_ip_4, 16))
+    def ethRegsPortWrite(ethWrapPort, src_ip): 
+        reg = ethWrapPort.eth_regs_0
+        reg.write(0x00, int(src_mac[4:], 16))
+        reg.write(0x04, (int(dest_mac[-4:], 16)<<16) + int(src_mac[:4], 16))
+        reg.write(0x08, int(dest_mac[:-4], 16))
+        reg.write(0x0c, int(src_ip, 16))
+        reg.write(0x10, int(dest_ip, 16))
+    ethRegsPortWrite(firmware.ethWrapPort0, src_ip_1)
+    ethRegsPortWrite(firmware.ethWrapPort1, src_ip_2)
+    ethRegsPortWrite(firmware.ethWrapPort2, src_ip_3)
+    ethRegsPortWrite(firmware.ethWrapPort3, src_ip_4)
 
 
 

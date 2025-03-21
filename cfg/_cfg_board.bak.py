@@ -58,7 +58,7 @@ accum_len  = 2**19 - 1 # determines sample rate: wf_fs/((accum_len+1)*2)
 
 # ============================================================================ #
 # frequency sweep properties
-sweep_steps    = 2000 # number of sweep steps
+sweep_steps    = 500 # number of sweep steps
 sweep_accums   = 5   # number of repeats of each sweep (averaging)
 target_chan_bw = 1 # target sweep channel bandwidth [MHz]
 
