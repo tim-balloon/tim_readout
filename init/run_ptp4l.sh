@@ -1,6 +1,7 @@
 #!/bin/bash
 interface=$1
 mac_address=$2
+cfg_file=$3
 
 # Determine the directory where this script is located
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,4 +11,4 @@ killall ptp4l
 
 # Run ptp4l with the specified interface and MAC address
 #ptp4l -i $interface -f gPTP.cfg --step_threshold=1 -p $mac_address &
-ptp4l -i "$interface" -f "$script_dir/gPTP.cfg" --step_threshold=1 &
+ptp4l -i "$interface" -f "$script_dir/$cfg_file" --step_threshold=1 &
