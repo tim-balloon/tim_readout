@@ -115,7 +115,7 @@ try:
     # ======================================================================== #
 
     # setAccumLen for drone 1 - all others are timed from this
-    firmware.chan1.write(0x08, cfg_b.accum_len)
+    firmware.chan1.dsp_regs_0.write(0x08, cfg_b.accum_len)
 
 
 

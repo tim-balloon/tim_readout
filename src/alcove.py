@@ -56,7 +56,7 @@ def _com():
         35:tones.createCustomCombFilesFromCurrentComb,
         36:alcove_base.modifyCustomCombAmps,
         37:tones.writeTargCombFromCustomList,
-        38:tones.setAccumLength,
+        # 38:tones.setAccumLength,
         40:sweeps.vnaSweep,
         # 41:sweeps.vnaSweepFull,
         42:sweeps.targetSweep,
