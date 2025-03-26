@@ -78,7 +78,7 @@ def main():
 
 # ============================================================================ #
 # _setupLogging
-def _setupLogging(log_file, MB, backup_count):
+def _setupLogging():
 
     # Create a rotating file handler
     handler = logging.handlers.RotatingFileHandler(
