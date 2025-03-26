@@ -129,7 +129,7 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     from time import sleep
     import time
 
-    N_steps  = int(N_steps)
+    N_steps  = max(1, int(N_steps)) # minimum 1 step
     f_center = float(f_center)
     N_accums = int(N_accums)
 
@@ -167,8 +167,11 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
 
 # ============================================================================ #
 # vnaSweep
-def vnaSweep():
+def vnaSweep(sweep_steps=None):
     """Perform a stepped frequency sweep with current comb, save as vna sweep.
+
+    sweep_steps: (int) Number of steps per tone in the sweep.
+        You must pass this override value to findResontators (stitch_bw?).
     """
 
     import numpy as np
@@ -178,7 +181,18 @@ def vnaSweep():
     f_center = io.load(io.file.f_center_vna)
     freqs_bb = io.load(io.file.freqs_vna)
 
-    S21 = np.array(_sweep(chan, f_center/1e6, freqs_bb,cfg_b.sweep_steps, N_accums=cfg_b.sweep_accums)) # f, Z
+    # number of sweep steps
+    try:     # attempt to use input
+        sweep_steps = int(sweep_steps)
+    except:  # fallback to config value
+        sweep_steps = cfg_b.sweep_steps
+
+    S21 = np.array(_sweep( # =(f,Z)
+        chan, f_center/1e6, freqs_bb, sweep_steps, 
+        N_accums=cfg_b.sweep_accums))
+
+    # S21 = np.array(_sweep(chan, f_center/1e6, freqs_bb,cfg_b.sweep_steps, N_accums=cfg_b.sweep_accums)) # f, Z
+
 
     io.save(io.file.s21_vna, S21)
     io.save(io.file.f_center_vna, f_center)
@@ -211,7 +225,12 @@ def vnaSweepFull(f_center, N_steps=500):
 
 # ============================================================================ #
 # targetSweep
-def targetSweep():
+def targetSweep(chan_bw=None, sweep_steps=None):
+    '''Perform a stepped freq. sweep with current comb, save as target sweep.
+
+    chan_bw: (float) Bandwidth swept around each tone.
+    sweep_steps: (int) Number of steps per tone in the sweep.
+    '''
 
     # assume comb is written
     # assume nclo is written
@@ -224,8 +243,21 @@ def targetSweep():
     freqs_rf = io.load(io.file.f_res_targ)
     freqs_bb = freqs_rf - f_center
 
-    S21 = np.array(_sweep(chan, f_center/1e6, freqs_bb, 
-                          cfg_b.sweep_steps, chan_bandwidth=cfg_b.target_chan_bw, N_accums=cfg_b.sweep_accums)) 
+    # number of sweep steps
+    try:     # attempt to use input
+        sweep_steps = int(sweep_steps)
+    except:  # fallback to config value
+        sweep_steps = cfg_b.sweep_steps
+
+    # bandwidth swept around each tone
+    try:     # attempt to use input
+        chan_bw = float(chan_bw)
+    except:  # fallback to config value
+        chan_bw = cfg_b.target_chan_bw
+    
+    S21 = np.array(_sweep(
+        chan, f_center/1e6, freqs_bb, sweep_steps, 
+        chan_bandwidth=chan_bw, N_accums=cfg_b.sweep_accums)) 
 
     io.save(io.file.s21_targ, S21)
 
@@ -234,7 +266,7 @@ def targetSweep():
 
 # ============================================================================ #
 # customSweep
-def customSweep(bw=1.):
+def customSweep(bw=1., sweep_steps=None):
     # assume comb is written
     # assume nclo is written
 
@@ -242,15 +274,25 @@ def customSweep(bw=1.):
 
     chan = cfg_b.drid
 
-    bw = float(bw)
+    # number of sweep steps
+    try:     # attempt to use input
+        sweep_steps = int(sweep_steps)
+    except:  # fallback to config value
+        sweep_steps = cfg_b.sweep_steps
+
+    # bandwidth swept around each tone
+    try:     # attempt to use input
+        chan_bw = float(bw)
+    except:  # fallback to config value
+        chan_bw = cfg_b.target_chan_bw
     
     f_center = io.load(io.file.f_center_vna) # Hz
     freqs_rf = io.load(io.file.f_rf_tones_comb_cust)
     freqs_bb = freqs_rf - f_center
 
     S21 = np.array(_sweep(
-        chan, f_center/1e6, freqs_bb, cfg_b.sweep_steps, 
-        chan_bandwidth=bw, N_accums=cfg_b.sweep_accums)) 
+        chan, f_center/1e6, freqs_bb, sweep_steps, 
+        chan_bandwidth=chan_bw, N_accums=cfg_b.sweep_accums)) 
 
     return io.returnWrapper(io.file.s21_custom, S21)
 

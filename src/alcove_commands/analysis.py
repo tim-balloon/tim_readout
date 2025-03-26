@@ -39,7 +39,7 @@ def _butterFilter(y, x, btype, cutoff_freqs, order=3, x_time=False):
 # ============================================================================ #
 # _stitchS21m
 def _stitchS21m(S21m, bw=500, sw=100):
-    """Shift S21 mags so the bin ends align.
+    """Shift S21 mags so the sweep channel bin ends align.
 
     S21m: (array of floats) 1D array of S21 complex modulus.
     bw:   (int) Width of the stitch bins.
@@ -63,88 +63,16 @@ def _stitchS21m(S21m, bw=500, sw=100):
 
 
 # ============================================================================ #
-# _resonatorIndicesInS21
-def _resonatorIndicesInS21(f, Z, stitch_bw=500, stitch_sw=100, f_hi=50, f_lo=1, prom_dB=1, distance=30, width=(5,100), testing=False):
-    """Find the indices of resonator peaks in given S21 signal.
-    
-    f:         (1D array of floats) Frequency bins of signal.
-    Z:         (1D array of floats) S21 complex values.
-    stitch_bw: (int) Width of the stitch bins.
-    stitch_sw: (int) Width of slice (at ends) of each stitch bin to take median.
-    f_hi:      (float) Highpass filter cutoff frequency (data units).
-    f_lo:      (float) lowpass filter cutoff frequency (data units).
-    prom_dB:   (float) Peak prominence cutoff, in dB.
-    distance:  (float) Min distance between peaks, in bins.
-    width      (tuple of 2 floats) Peak width (min, max), in bins.
-    testing:   (bool) Also return intermediate products.
-    
-    Return:  (1D array of integers) Indices of peaks.
-    """
-    
-    import numpy as np
-    from scipy.signal import iirfilter, sosfiltfilt, find_peaks
-    
-    fs  = abs(f[1] - f[0])                             # sampling frequency
-    m   = np.abs(Z)                                    # S21 mags
-    m_s   = _stitchS21m(m, bw=stitch_bw, sw=stitch_sw)   # stitch mags
-    
-    filt_bp = iirfilter(2, (f_lo, f_hi), fs=fs, btype='bandpass', output='sos')
-    m_f   = sosfiltfilt(filt_bp, m_s)                    # bandpass filtered
-    prom_lin = np.amax(m)*(1-10**(-prom_dB/20)) 
-    m_f_dB = 20.*np.log10(m_f + abs(np.min(m_f)) + 1)     # in dB
-    peaks, props = find_peaks(x=-m_f, prominence=prom_lin, 
-                              distance=distance, width=width) 
-    
-    if testing: return peaks, (fs, m, m_f, m_f_dB, prom_dB, props)
-    return peaks
-
-
-# ============================================================================ #
-# _findResonators
-def _findResonators(f, Z,
-                   stitch_sw=100, 
-                   f_hi=50, f_lo=1, prom_dB=1, 
-                   distance=30, width_min=5, width_max=100):
-    """Find the resonator peak frequencies in previously saved s21.npy file.
-
-    f:         (1D array of floats) Frequency bins of signal.
-    Z:         (1D array of floats) S21 complex values.
-    stitch_bw: (int) Width of the stitch bins.
-    f_hi:      (float) Highpass filter cutoff frequency. [data units]
-    f_lo:      (float) lowpass filter cutoff frequency. [data units]
-    prom_dB:   (float) Peak prominence cutoff. [dB]
-    distance:  (int) Min distance between peaks. [bins]
-    width_min  (int) Peak width minimum. [bins]
-    width_max  (int) Peak width maximum. [bins]
-    """
-    
-    import numpy as np
-
-    # All params are str from Redis so need to cast
-    stitch_sw   = int(stitch_sw)
-    f_hi        = float(f_hi)
-    f_lo        = float(f_lo)
-    prom_dB     = float(prom_dB)
-    distance    = int(distance)
-    width       = (int(width_min), int(width_max))
-
-    i_peaks = _resonatorIndicesInS21(
-        f, Z, cfg_b.sweep_steps, stitch_sw, f_hi, f_lo, prom_dB, 
-        distance, width, testing=False)
-    f_res = f[i_peaks]
-
-    return f_res
-
-
-# ============================================================================ #
 # _findResonators_alt
-def _findResonators_alt(f, Z, 
-                      peak_prom_std=10, peak_prom_db=0, 
-                      peak_dis=100, width_min=5, width_max=100,
-                      stitch=True, stitch_sw=100, 
-                      remove_cont=True, continuum_wn=300, 
-                      remove_noise=True, noise_wn=30_000,
-                     ):
+def _findResonators_alt(
+        f, Z, 
+        peak_prom_std=10, peak_prom_db=0, 
+        peak_dis=100, width_min=5, width_max=100,
+        stitch=True, stitch_sw=100, 
+        remove_cont=True, continuum_wn=300, 
+        remove_noise=True, noise_wn=30_000,
+        stitch_bw=None
+    ):
     '''
     
     f:   (1D array of floats) Frequency of S21 samples.
@@ -162,6 +90,7 @@ def _findResonators_alt(f, Z,
     continuum_wn:  (int) Continuum filter cutoff frequency [Hz].
     remove_noise:  (bool) Whether to subtract noise.
     noise_wn:      (int) Noise filter cutoff frequency [Hz].
+    stitch_bw:     (int) Bins width of the stitch channels.
     '''
     
     from scipy.signal import find_peaks
@@ -176,6 +105,11 @@ def _findResonators_alt(f, Z,
     stitch_sw     = int(stitch_sw)
     continuum_wn  = int(continuum_wn)
     noise_wn      = int(noise_wn)
+
+    try:
+        stitch_bw = int(stitch_bw)
+    except:
+        stitch_bw = cfg_b.sweep_steps # bins bw <- steps
     
     x = f
     y = np.abs(Z)
@@ -185,7 +119,7 @@ def _findResonators_alt(f, Z,
     
     # stitch discontinuities
     if stitch:
-        y = _stitchS21m(y, bw=cfg_b.sweep_steps, sw=stitch_sw)
+        y = _stitchS21m(y, bw=stitch_bw, sw=stitch_sw)
         
     # remove continuum
     if remove_cont:
@@ -211,15 +145,16 @@ def _findResonators_alt(f, Z,
 
 # ============================================================================ #
 # _findMins
-def _findMins(f, Z, stitch_bw=500):
+def _findMins(f, Z, stitch_bw=None):
     """Find the minimum (resonator peak) in each targ bin.
     """
     
     import numpy as np
 
-    # type enforcement
-    # required since parameters can get passed as strings
-    stitch_bw     = int(stitch_bw)
+    try:
+        stitch_bw = int(stitch_bw)
+    except:
+        stitch_bw = cfg_b.sweep_steps # bins bw <- steps
 
     m = np.abs(Z)
     
