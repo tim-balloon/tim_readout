@@ -24,6 +24,7 @@ import argparse
 import builtins
 import importlib
 import threading
+import logging.handlers
 
 import alcove
 from config import board as cfg_b
@@ -41,12 +42,8 @@ import feeds
 def main():
     # CTRL-c to exit out of listen mode
 
-    # only modify log if this is main
-    logging.basicConfig(
-        filename='../logs/board.log', level=logging.DEBUG,
-        style='{', datefmt='%Y-%m-%d %H:%M:%S', 
-        format='{asctime} {levelname} {filename}:{lineno}: {message}'
-    )
+    # setup logging
+    _setupLogging()
 
     # setup and get the CLI args
     args = _setupArgparse() 
@@ -80,7 +77,32 @@ def main():
 
 
 # ============================================================================ #
-# print monkeypatch
+# _setupLogging
+def _setupLogging(log_file, MB, backup_count):
+
+    # Create a rotating file handler
+    handler = logging.handlers.RotatingFileHandler(
+        cfg_b.log_path, 
+        maxBytes=cfg_b.log_MB * 1024 * 1024, 
+        backupCount=cfg_b.log_backup_count
+    )
+
+    # Set the logging format
+    formatter = logging.Formatter(
+        '{asctime} {levelname} {filename}:{lineno}: {message}',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        style='{'
+    )
+    handler.setFormatter(formatter)
+
+    # Get the root logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)  # Set the logging level
+    logger.addHandler(handler)
+
+
+# ============================================================================ #
+# _print (monkeypatch)
 _print = print 
 def print(*args, **kw):
     '''Override the print statement.

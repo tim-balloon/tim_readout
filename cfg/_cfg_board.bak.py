@@ -13,6 +13,13 @@ bid = 1    # should match physical id on board
 
 
 # ============================================================================ #
+# logging
+log_path         = '../logs/board.log'
+log_MB           = 10  # size of log files
+log_backup_count = 5   # number of log files
+
+
+# ============================================================================ #
 # Firmware
 firmware_file = 'init/tetra_v13p11.xsa'
 
