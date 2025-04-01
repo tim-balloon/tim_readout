@@ -170,7 +170,8 @@ def adriansNoiseTest():
         ip = "192.168.3.40"
         port = 4096
         # packets = t*489
-        packets = int(t*512e6/2**20)
+        packets = int(t*512e6/2**20) # assuming sample rate
+        # sample rate could be different
         I,Q = captureTimestream(packets, ip, port)
         # power: I[kid_id]**2 + Q[kid_id]**2
         # phase: np.arctan2(Q[kid_id], I[kid_id])

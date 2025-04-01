@@ -2,6 +2,7 @@
 # init.py
 # Board side initialization script to be called after boot-up.
 # James Burgoyne jburgoyne@phas.ubc.ca
+# Adrian Sinclair aksincla@asu.edu
 # CCAT/FYST 2025
 # ============================================================================ #
 

@@ -3,7 +3,8 @@
 # alcove_base.py
 # Alcove commands common base.
 # James Burgoyne jburgoyne@phas.ubc.ca 
-# CCAT Prime 2023  
+# Adrian Sinclair aksincla@asu.edu
+# CCAT Prime 2025  
 # ============================================================================ #
 
 

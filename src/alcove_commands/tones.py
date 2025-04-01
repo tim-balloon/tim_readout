@@ -2,7 +2,8 @@
 # tones.py
 # Tone and comb functions and commands.
 # James Burgoyne jburgoyne@phas.ubc.ca 
-# CCAT Prime 2024  
+# Adrian Sinclair aksincla@asu.edu
+# CCAT Prime 2025  
 # ============================================================================ #
 
 from alcove_commands.alcove_base import *
