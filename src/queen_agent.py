@@ -2,21 +2,20 @@
 # queen_agent.py
 # OCS agent to control computer (queen) commands.
 #
-# James Burgoyne jburgoyne@phas.ubc.ca 
-# CCAT Prime 2024
+# James Burgoyne jburgoyne@phas.ubc.ca
+# Darshan Patel dp649@cornell.edu
+# CCAT Prime 2025
 # ============================================================================ #
 
 import time
 
 from ocs import ocs_agent, site_config
+from ocs.ocs_twisted import TimeoutLock
 # from twisted.internet.defer import Deferred, inlineCallbacks
 
 import queen
 import alcove
 import drone_control
-
-
-
 
 # ======================================================================== #
 # main
@@ -29,14 +28,14 @@ def main(args=None):
     def rt(s, f, b=True):
         return agent.register_task(s, f, blocking=b)
 
+    agent.register_process('feedMonitor', readout.monitorFeeds, readout._stopMonitorFeeds, startup=True)
+
     # queen commands
     rt('getKeyValue', readout.getKeyValue)
     rt('setKeyValue', readout.setKeyValue)
     rt('getClientList', readout.getClientList)
     rt('getClientListLight', readout.getClientListLight)
     rt('action', readout.action) # drone control actions
-    rt('monitorFeeds', readout.monitorFeeds, b=False)
-    rt('stopMonitorFeeds', readout.stopMonitorFeeds)
 
     # drone commands
     rt('setNCLO', readout.setNCLO)
@@ -52,80 +51,20 @@ def main(args=None):
        readout.createCustomCombFilesFromCurrentComb)
     rt('modifyCustomCombAmps', readout.modifyCustomCombAmps)
     rt('writeTargCombFromCustomList', readout.writeTargCombFromCustomList)
-    rt('vnaSweep', readout.vnaSweep, b=False)
+    rt('vnaSweep', readout.vnaSweep)
     rt('targetSweep', readout.targetSweep)
     rt('customSweep', readout.customSweep)
     rt('findVnaResonators', readout.findVnaResonators)
     rt('findTargResonators', readout.findTargResonators)
+    rt('cleanBoardDroneDirs', readout.cleanBoardDroneDirs)
     rt('findCalTones', readout.findCalTones)
     rt('sys_info', readout.sys_info)
     rt('sys_info_v', readout.sys_info_v)
     rt('timestreamOn', readout.timestreamOn)
     rt('userPacketInfo', readout.userPacketInfo)
     rt('setAtten', readout.setAtten)
-    rt('setAccumLength', readout.setAccumLength)
-
-    # agent feeds
-    agent.register_feed(
-        'drone_free_spaces_GB',
-        record=True,
-        agg_params={'frame_length': 60}, # 60 s data polling
-        buffer_time=5)  # Allow a small buffer
-
-    agent.register_feed(
-        'drone_temperatures_C',
-        record=True,
-        agg_params={'frame_length': 60}, # 60 s data polling
-        buffer_time=5)  # Allow a small buffer
-        
         
     runner.run(agent, auto_reconnect=True)
-
-
-
-
-# ============================================================================ #
-# == CLASS: FeedMonitor
-# ============================================================================ #
-class FeedMonitor:
-    """
-
-    Parameters:
-    """
-
-    def __init__(self):
-        self.take_data = False
-        self.r = None
-
-
-    # ======================================================================== #
-    # FeedMonitor.start
-    def start(self, session, interval):
-
-        self.take_data = True
-
-        def handler(label, data):
-            session.app.publish_to_feed(label, data)
-
-        while self.take_data:
-            self.r = queen.pollFeeds(handler, self.r)
-            time.sleep(interval)
-
-        return True, 'FeedMonitor: Exited.'
-        
-    
-    # ======================================================================== #
-    # FeedMonitor.stop
-    def stop(self):
-
-        if self.take_data:
-            self.take_data = False
-            return True,  'FeedMonitor: Stopping...'
-        else:
-            return False, 'FeedMonitor: Not currently running.'
-
-
-
 
 # ============================================================================ #
 # == CLASS: ReadoutAgent
@@ -138,11 +77,24 @@ class ReadoutAgent:
     """
 
     def __init__(self, agent):
-
         self.agent = agent
+        self.lock = TimeoutLock(default_timeout=5)
 
-        self.feedMonitor = FeedMonitor()
+        self.r = None
+        self._monitorFeeds = False
 
+        # agent feeds
+        self.agent.register_feed(
+            'drone_free_spaces_GB',
+            record=True,
+            agg_params={'frame_length': 10*60}, # 60 s data polling
+            buffer_time=5.)  # Allow a small buffer
+
+        self.agent.register_feed(
+            'drone_temperatures_C',
+            record=True,
+            agg_params={'frame_length': 10*60}, # 60 s data polling
+            buffer_time=5.)  # Allow a small buffer
 
     # ======================================================================== #
     # .getKeyValue
@@ -157,8 +109,11 @@ class ReadoutAgent:
         key: str
             The key to fetch the value for.
         """
-        
-        return True, f"{params['key']}: {queen.getKeyValue(params['key'])}"
+        with self.lock.acquire_timeout(job='getKeyValue') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            return True, f"{params['key']}: {queen.getKeyValue(params['key'])}"
 
 
     # ======================================================================== #
@@ -178,7 +133,11 @@ class ReadoutAgent:
             The value to set for key.
         """
         
-        return True, f"{params['key']}: {queen.setKeyValue(params['key'], params['value'])}"
+        with self.lock.acquire_timeout(job='setKeyValue') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            return True, f"{params['key']}: {queen.setKeyValue(params['key'], params['value'])}"
 
 
     # ======================================================================== #
@@ -188,8 +147,11 @@ class ReadoutAgent:
 
         **Task** - Return the list of Redis clients, verbose.
         """
-
-        return True, f"client list: {queen.getClientList()}"
+        with self.lock.acquire_timeout(job='getClientList') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            return True, f"client list: {queen.getClientList()}"
     
     
     # ======================================================================== #
@@ -199,8 +161,11 @@ class ReadoutAgent:
 
         **Task** - Return the list of Redis clients.
         """
-
-        return True, f"client list: {queen.getClientListLight()}"
+        with self.lock.acquire_timeout(job='getClientListLight') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            return True, f"client list: {queen.getClientListLight()}"
 
 
     # ======================================================================== #
@@ -222,19 +187,24 @@ class ReadoutAgent:
             'startAllDrones', 'stopAllDrones', 'restartAllDrones'
         """
 
-        action = params['action']
-        bid, drid = drone_control._bid_drid(params['com_to'])
+        with self.lock.acquire_timeout(job='action') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            action = params['action']
+            bid, drid = drone_control._bid_drid(params['com_to'])
 
-        return True, f"action: {drone_control.action(action, bid, drid)}"
+            return True, f"action: {drone_control.action(action, bid, drid)}"
     
 
     # ======================================================================== #
     # .monitorFeeds
-    @ocs_agent.param('interval', default=60, type=int)
+    @ocs_agent.param('poll_interval', default=60, type=int)
+    @ocs_agent.param('lock_interval', default=0.1, type=float)
     def monitorFeeds(self, session, params):
         """monitorFeeds()
 
-        **Task** - Start monitoring drone HK data (temp, disk space).
+        **Process** - Monitor drone HK data (temp, disk space).
 
         Args
         -------
@@ -242,18 +212,47 @@ class ReadoutAgent:
             Interval to continue polling data, in seconds.
         """
 
-        return self.feedMonitor.start(session, interval=params['interval'])
+        def handler(label, data):
+            session.data[f'{label}'] = data
+            self.agent.publish_to_feed(label, data)
 
+        with self.lock.acquire_timeout(timeout=0, job='monitorFeeds') as acquired:
+            if not acquired:
+                print(f"Lock could not be acquired because it is held by {self.lock.job}.")
+                return False
+            
+            last_release = time.time()
+            last_poll = time.time()
+
+            self._monitorFeeds = True
+
+            while self._monitorFeeds:
+                # Release and reacquire the lock every ~1 second
+                if time.time() - last_release > params['lock_interval']:
+                    last_release = time.time()
+                    if not self.lock.release_and_acquire(timeout=120):
+                        print(f'Could not re-acquire lock now held by {self.lock.job}.')
+                        return False
+
+                if time.time() - last_poll > params['poll_interval']:
+                    last_poll = time.time()
+                    self.r = queen.pollFeeds(handler, self.r)
+                time.sleep(params['lock_interval'])
+        return True, 'FeedMonitor: Exited.'
 
     # ======================================================================== #
     # .stopMonitorFeeds
-    def stopMonitorFeeds(self, session, params):
+    def _stopMonitorFeeds(self, session, params):
         """stopMonitorFeeds()
 
         **Task** - Stop monitoring drone HK data feeds.
         """
 
-        return self.feedMonitor.stop()
+        if self._monitorFeeds:
+            self._monitorFeeds = False
+            return True,  'FeedMonitor: Stopping...'
+        else:
+            return False, 'FeedMonitor: Not currently running.'
 
 
     # ======================================================================== #
@@ -275,12 +274,16 @@ class ReadoutAgent:
         f_lo: int
             Center frequency in [MHz].
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'setNCLO', 
-            com_to   = params['com_to'], 
-            silent   = params['silent'],
-            com_args = f'f_lo={params["f_lo"]}')
+
+        with self.lock.acquire_timeout(job='setNCLO') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'setNCLO', 
+                com_to   = params['com_to'], 
+                silent   = params['silent'],
+                com_args = f'f_lo={params["f_lo"]}')
         
         # return is a fail message str or number of clients int
         return True, f"setNCLO: {rtn}"
@@ -305,12 +308,16 @@ class ReadoutAgent:
         df_lo: float
             Center frequency shift, in [MHz].
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'setFineNCLO', 
-            com_to   = params['com_to'], 
-            silent   = params['silent'],
-            com_args = f'f_lo={params["df_lo"]}')
+
+        with self.lock.acquire_timeout(job='setFineNCLO') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'setFineNCLO', 
+                com_to   = params['com_to'], 
+                silent   = params['silent'],
+                com_args = f'f_lo={params["df_lo"]}')
         
         # return is a fail message str or number of clients int
         return True, f"setFineNCLO: {rtn}"
@@ -335,12 +342,15 @@ class ReadoutAgent:
         mux_sel: float
             ?
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'getSnapData', 
-            com_to   = params['com_to'], 
-            silent   = params['silent'],
-            com_args = f'mux_sel={params["mux_sel"]}')
+        with self.lock.acquire_timeout(job='getSnapData') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'getSnapData', 
+                com_to   = params['com_to'], 
+                silent   = params['silent'],
+                com_args = f'mux_sel={params["mux_sel"]}')
         
         # return is a fail message str or number of clients int
         return True, f"getSnapData: {rtn}"
@@ -355,11 +365,14 @@ class ReadoutAgent:
 
         **Task** - Return the ADC RMS.
         """
-
-        rtn = _sendAlcoveCommand(
-            com_str  = 'getADCrms', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='getADCrms') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'getADCrms', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"getADCrms: {rtn}"
@@ -381,11 +394,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'writeTestTone', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='writeTestTone') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'writeTestTone', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"writeTestTone: {rtn}"
@@ -407,11 +423,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'writeNewVnaComb', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='writeNewVnaComb') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'writeNewVnaComb', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"writeNewVnaComb: {rtn}"
@@ -437,12 +456,15 @@ class ReadoutAgent:
             Include calibration tones (True) or not (False).
             Note that findCalTones must be run first.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'writeTargCombFromVnaSweep', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f'cal_tones={params["cal_tones"]}')
+        with self.lock.acquire_timeout(job='writeTargCombFromVnaSweep') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'writeTargCombFromVnaSweep', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'cal_tones={params["cal_tones"]}')
         
         # return is a fail message str or number of clients int
         return True, f"writeTargCombFromVnaSweep: {rtn}"
@@ -472,12 +494,15 @@ class ReadoutAgent:
         new_amps_and_phis: bool 
             Generate new amplitudes and phases if True.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'writeTargCombFromTargSweep', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f'cal_tones={params["cal_tones"]}, new_amps_and_phis={params["cal_tones"]}')
+        with self.lock.acquire_timeout(job='writeTargCombFromTargSweep') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'writeTargCombFromTargSweep', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'cal_tones={params["cal_tones"]}, new_amps_and_phis={params["cal_tones"]}')
         
         # return is a fail message str or number of clients int
         return True, f"writeTargCombFromTargSweep: {rtn}"
@@ -502,11 +527,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'writeCombFromCustomList', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='writeCombFromCustomList') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'writeCombFromCustomList', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"writeCombFromCustomList: {rtn}"
@@ -528,11 +556,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'createCustomCombFilesFromCurrentComb', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='createCustomCombFilesFromCurrentComb') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'createCustomCombFilesFromCurrentComb', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"createCustomCombFilesFromCurrentComb: {rtn}"
@@ -557,12 +588,15 @@ class ReadoutAgent:
         factor: float
             Factor to multiply tone amps by.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'modifyCustomCombAmps', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f'factor={params["factor"]}')
+        with self.lock.acquire_timeout(job='modifyCustomCombAmps') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'modifyCustomCombAmps', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'factor={params["factor"]}')
         
         # return is a fail message str or number of clients int
         return True, f"modifyCustomCombAmps: {rtn}"
@@ -587,11 +621,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'writeTargCombFromCustomList', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='writeTargCombFromCustomList') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'writeTargCombFromCustomList', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"writeTargCombFromCustomList: {rtn}"
@@ -601,6 +638,7 @@ class ReadoutAgent:
     # .vnaSweep
     @ocs_agent.param('com_to', default=None, type=str)
     @ocs_agent.param('silent', default=False, type=bool)
+    @ocs_agent.param('sweep_steps', default=None, type=int)
     def vnaSweep(self, session, params):
         """vnaSweep()
 
@@ -613,11 +651,19 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'vnaSweep', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+
+        with self.lock.acquire_timeout(job='vnaSweep') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            
+            arg_keys = ['sweep_steps']
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'vnaSweep', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
         return True, f"vnaSweep: {rtn}"
@@ -627,6 +673,8 @@ class ReadoutAgent:
     # .targetSweep
     @ocs_agent.param('com_to', default=None, type=str)
     @ocs_agent.param('silent', default=False, type=bool)
+    @ocs_agent.param('sweep_steps', default=None, type=int)
+    @ocs_agent.param('chan_bw', default=None, type=float)
     def targetSweep(self, session, params):
         """targetSweep()
 
@@ -639,11 +687,17 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'targetSweep', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='targetSweep') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            
+            arg_keys = ['sweep_steps', 'chan_bw']
+            rtn = _sendAlcoveCommand(
+                com_str  = 'targetSweep', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
         return True, f"targetSweep: {rtn}"
@@ -668,18 +722,21 @@ class ReadoutAgent:
         bw: float
             Channel bandwidth.
         """
-    
-        if params["bw"]:
-            rtn = _sendAlcoveCommand(
-                com_str  = 'customSweep', 
-                com_to   = params['com_to'],
-                silent   = params['silent'],
-                com_args = f'bw={params["bw"]}')
-        else: # allow func bw default
-            rtn = _sendAlcoveCommand(
-                com_str  = 'customSweep', 
-                com_to   = params['com_to'],
-                silent   = params['silent'])
+        with self.lock.acquire_timeout(job='customSweep') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            if params["bw"]:
+                rtn = _sendAlcoveCommand(
+                    com_str  = 'customSweep', 
+                    com_to   = params['com_to'],
+                    silent   = params['silent'],
+                    com_args = f'bw={params["bw"]}')
+            else: # allow func bw default
+                rtn = _sendAlcoveCommand(
+                    com_str  = 'customSweep', 
+                    com_to   = params['com_to'],
+                    silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"customSweep: {rtn}"
@@ -695,6 +752,7 @@ class ReadoutAgent:
     @ocs_agent.param('width_min', default=5, type=int)
     @ocs_agent.param('width_max', default=100, type=int)
     @ocs_agent.param('stitch', default=True, type=bool)
+    @ocs_agent.param('stitch_bw', default=None, type=int)
     @ocs_agent.param('stitch_sw', default=100, type=int)
     @ocs_agent.param('remove_cont', default=True, type=bool)
     @ocs_agent.param('continuum_wn', default=300, type=int)
@@ -737,25 +795,20 @@ class ReadoutAgent:
         noise_wn: (int) 
             Noise filter cutoff frequency [Hz].
         """
-  
-        com_args = ''
-        com_args += f'peak_prom_std={params["peak_prom_std"]}, '
-        com_args += f'peak_prom_db={params["peak_prom_db"]}, '
-        com_args += f'peak_dis={params["peak_dis"]}, '
-        com_args += f'width_min={params["width_min"]}, '
-        com_args += f'width_max={params["width_max"]}, '
-        com_args += f'stitch={params["stitch"]}, '
-        com_args += f'stitch_sw={params["stitch_sw"]}, '
-        com_args += f'remove_cont={params["remove_cont"]}, '
-        com_args += f'continuum_wn={params["continuum_wn"]}, '
-        com_args += f'remove_noise={params["remove_noise"]}, '
-        com_args += f'noise_wn={params["noise_wn"]}'
 
-        rtn = _sendAlcoveCommand(
-            com_str  = 'findVnaResonators', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = com_args)
+        with self.lock.acquire_timeout(job='findVnaResonators') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+        
+            arg_keys = ['peak_prom_std', 'peak_prom_db', 'peak_dis', 'width_min', 'width_max', 
+                        'stitch', 'stitch_bw', 'stitch_sw', 'remove_cont', 'continuum_wn', 'remove_noise', 'noise_wn']
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'findVnaResonators', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
         return True, f"findVnaResonators: {rtn}"
@@ -765,7 +818,7 @@ class ReadoutAgent:
     # .findTargResonators
     @ocs_agent.param('com_to', default=None, type=str)
     @ocs_agent.param('silent', default=False, type=bool)
-    @ocs_agent.param('stitch_bw', default=500, type=int)
+    @ocs_agent.param('stitch_bw', default=None, type=int)
     def findTargResonators(self, session, params):
         """findTargResonators()
 
@@ -782,16 +835,18 @@ class ReadoutAgent:
         stitch_bw: int 
             Width of the stitch bins.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'findTargResonators', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f'stitch_bw={params["stitch_bw"]}')
+        with self.lock.acquire_timeout(job='findTargResonators') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'findTargResonators', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'stitch_bw={params["stitch_bw"]}')
         
         # return is a fail message str or number of clients int
         return True, f"findTargResonators: {rtn}"
-
 
     # ======================================================================== #
     # .findCalTones
@@ -821,12 +876,17 @@ class ReadoutAgent:
         max_tones: int 
             Maximum number of tones to return.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'findCalTones', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f'f_hi={params["f_hi"]}, f_lo={params["f_lo"]}, tol={params["tol"]}, max_tones={params["max_tones"]}')
+        with self.lock.acquire_timeout(job='findCalTones') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            arg_keys = ['f_hi', 'f_lo', 'tol', 'max_tones']
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'findCalTones', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
         return True, f"findCalTones: {rtn}"
@@ -848,11 +908,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'sys_info', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='sys_info') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'sys_info', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"sys_info: {rtn}"
@@ -874,11 +937,14 @@ class ReadoutAgent:
             If None, will send to all drones.
             Default is None.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'sys_info_v', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+        with self.lock.acquire_timeout(job='sys_info_v') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'sys_info_v', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
         
         # return is a fail message str or number of clients int
         return True, f"sys_info_v: {rtn}"
@@ -919,14 +985,19 @@ class ReadoutAgent:
             Whether to actually delete files or not.
         """
 
-        arg_keys = ['leave_latest', 'ftype', 'testing',
-                    'olderThanDate', 'olderThanDaysAgo', 'largerThanMB']
-    
-        rtn = _sendAlcoveCommand(
-            com_str  = 'cleanBoardDroneDirs', 
-            com_to   = params['com_to'],
-            silent   = params['silent'], 
-            com_args = _buildComArgs(params, arg_keys))
+        with self.lock.acquire_timeout(job='cleanBoardDroneDirs') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+
+            arg_keys = ['leave_latest', 'ftype', 'testing',
+                        'olderThanDate', 'olderThanDaysAgo', 'largerThanMB']
+        
+            rtn = _sendAlcoveCommand(
+                com_str  = 'cleanBoardDroneDirs', 
+                com_to   = params['com_to'],
+                silent   = params['silent'], 
+                com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
         return True, f"cleanBoardDroneDirs: {rtn}"
@@ -951,12 +1022,15 @@ class ReadoutAgent:
         on: bool
             Timestream on/off.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'timestreamOn', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f"on={params['on']},")
+        with self.lock.acquire_timeout(job='timestreamOn') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'timestreamOn', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f"on={params['on']},")
         
         # return is a fail message str or number of clients int
         return True, f"timestreamOn: {rtn}"
@@ -981,13 +1055,18 @@ class ReadoutAgent:
         data: 16 bit int
             Data to write to packet.
         """
-  
-        rtn = _sendAlcoveCommand(
-            com_str  = 'userPacketInfo', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f"data={params['data']}")
-        
+
+        with self.lock.acquire_timeout(job='userPacketInfo') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'userPacketInfo', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f"data={params['data']}")
+            
         # return is a fail message str or number of clients int
         return True, f"userPacketInfo: {rtn}"
 
@@ -1014,47 +1093,49 @@ class ReadoutAgent:
         atten: (float)
             Attenuation value in dB min 0 max 31.75
         """
-  
-        direction = params['direction']
-        atten = params['atten']
 
-        rtn = _sendAlcoveCommand(
-            com_str  = 'setAtten', 
-            com_to   = params['com_to'],
-            silent   = params['silent'],
-            com_args = f'direction={direction}, atten={atten},')
+        with self.lock.acquire_timeout(job='setAtten') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+
+            direction = params['direction']
+            atten = params['atten']
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'setAtten', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'direction={direction}, atten={atten},')
         
         # return is a fail message str or number of clients int
         return True, f"setAtten: {rtn}"
     
 
-    # ======================================================================== #
-    # .vnaSweep
-    @ocs_agent.param('com_to', default=None, type=str)
-    @ocs_agent.param('silent', default=False, type=bool)
-    def setAccumLength(self, session, params):
-        """vnaSweep()
+    # # ======================================================================== #
+    # # .vnaSweep
+    # @ocs_agent.param('com_to', default=None, type=str)
+    # @ocs_agent.param('silent', default=False, type=bool)
+    # def setAccumLength(self, session, params):
+    #     """vnaSweep()
 
-        **Task** - Sets the accumulation length in the DSP registers, determining sample rate.
+    #     **Task** - Sets the accumulation length in the DSP registers, determining sample rate.
 
-        Args
-        -------
-        com_to: str
-            Drone to send command to in format bid.drid.
-            If None, will send to all drones.
-            Default is None.
-        """
+    #     Args
+    #     -------
+    #     com_to: str
+    #         Drone to send command to in format bid.drid.
+    #         If None, will send to all drones.
+    #         Default is None.
+    #     """
   
-        rtn = _sendAlcoveCommand(
-            com_str  = 'setAccumLength', 
-            com_to   = params['com_to'],
-            silent   = params['silent'])
+    #     rtn = _sendAlcoveCommand(
+    #         com_str  = 'setAccumLength', 
+    #         com_to   = params['com_to'],
+    #         silent   = params['silent'])
         
-        # return is a fail message str or number of clients int
-        return True, f"setAccumLength: {rtn}"
-
-
-
+    #     # return is a fail message str or number of clients int
+    #     return True, f"setAccumLength: {rtn}"
 
 # ============================================================================ #
 # == INTERNAL ==
@@ -1074,7 +1155,6 @@ def _buildComArgs(params, arg_keys):
     
     return com_args
 
-
 # ============================================================================ #
 # _comNumAlcove
 def _comNumAlcove(com_str):
@@ -1085,7 +1165,6 @@ def _comNumAlcove(com_str):
     return alcove.comNumFromStr(com_str)
     # coms = {alcove.com[key].__name__:key for key in alcove.com.keys()}
     # return coms[com_str]
-
 
 # ============================================================================ #
 # _sendAlcoveCommand
@@ -1134,9 +1213,6 @@ def _sendAlcoveCommand(com_str, com_to=None, com_args=None, silent=False):
         return queen.alcoveCommand(
             com_num, args=com_args, ret_data=ret_data, 
             all_boards=True)
-
-
-
 
 if __name__ == '__main__':
     main()
