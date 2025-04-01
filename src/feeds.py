@@ -24,10 +24,6 @@ def _wilds():
         'temp' : f'temp_*',
         'spc'  : f'spc_*',
     }
-    # wilds = {
-    #     'temp' : f'temp:*',
-    #     'spc'  : f'spc:*',
-    # }
 
     return wilds
 
@@ -42,15 +38,9 @@ def _keys():
 
     keys = {
         'temp_ps' : f'temp_{id}_ps', # e.g. 'temp_1_1_ps'
-        'temp_pl' : f'temp_{id}_pl', # e.g. 'temp_1_1_pl'
-        'spc'     : f'spc_{id}',     # e.g. 'spc_1_1'
+        'temp_pl' : f'temp_{id}_pl', # e.g. "temp_1_1_pl"
+        'spc'     : f'spc_{id}', # e.g. "spc_1_1"
     }
-
-    # keys = {
-    #     'temp_ps' : f'temp:{id}:ps', # e.g. 'temp:1.1:ps'
-    #     'temp_pl' : f'temp:{id}:pl', # e.g. 'temp:1.1:pl'
-    #     'spc'     : f'spc:{id}',     # e.g. 'spc:1.1'
-    # }
 
     return keys
 
@@ -79,6 +69,23 @@ def _getKeyValsMatching(r, match):
 
 
 # ============================================================================ #
+# _dictValsToFloats
+def _dictValsToFloats(keyVals):
+    """Convert dictionary values to floats.
+    If value can't be converted, remove key.
+    """
+
+    keyVals_f = {}
+    for k in keyVals:
+        try:
+            keyVals_f[k] = float(keyVals[k])
+        except:
+            continue
+        
+    return keyVals_f
+
+
+# ============================================================================ #
 # _setKeyVal
 def _setKeyVal(r, key, val, expire=None):
     """Set a val for a key, with optional expiry, in s.
@@ -99,33 +106,45 @@ def getFeedTemps(r, handler):
     pl = programmable logic
     """
 
+    # temps are in keyVals in Redis
+    keyVals = _getKeyValsMatching(r, _wilds()['temp'])
+
+    # convert values from str to floats 
+    keyVals = _dictValsToFloats(keyVals)
+
     data = {
         'timestamp': time.time(),
         'block_name': f'{cfg_b.bid}_{cfg_b.drid}', # id
-        'data': _getKeyValsMatching(r, _wilds()['temp']) # keyvals
+        'data': keyVals
     }
 
     print(data)
 
     handler('drone_temperatures_C', data)
 
-    # data = {}
-    # for key in keyvals:
-    #     _,id,sensor = key.split(':') 
-    #     temp = keyvals[key]
-    #     data[f"{id}:{sensor}"] = temp
 
-    
 # ============================================================================ #
 # getFeedSpc
 def getFeedSpc(r, handler):
     """Get all drones feeds: Free space remaining, in GB.
     """
 
+    # space remaining are in keyVals in Redis
+    keyVals = _getKeyValsMatching(r, _wilds()['spc'])
+    
+    # convert values from str to floats 
+    keyVals = _dictValsToFloats(keyVals)
+
+    keyVals = {k: float(keyVals[k]) for k in keyVals 
+               if isinstance(keyVals[k], (int, float, str)) 
+               and type(keyVals[k]) != str 
+               or (type(keyVals[k]) == str 
+                   and keyVals[k].replace('.','',1).isdigit())}
+
     data = {
         'timestamp': time.time(),
         'block_name': f'{cfg_b.bid}_{cfg_b.drid}', # id
-        'data': _getKeyValsMatching(r, _wilds()['spc']) # keyvals
+        'data': keyVals
     }
 
     handler('drone_free_spaces_GB', data)
