@@ -2,7 +2,7 @@
 # queen_commands/test_functions.py
 # Testing functions which run on the control computer.
 # James Burgoyne jburgoyne@phas.ubc.ca 
-# CCAT Prime 2023  
+# CCAT Prime 2025
 # ============================================================================ #
 
 import numpy as np
@@ -16,12 +16,69 @@ import queen_commands.control_io as io
 from timestream import TimeStream
 
 
+# ============================================================================ #
+# _sendCom
+def _sendCom(bid, drid, com_str, args_str=None):
+    """
+    """
+
+    com_num = alcove.comNumFromStr(com_str)
+    return queen.alcoveCommand(
+        com_num, bid=bid, drid=drid, all_boards=False, args=args_str)
+
 
 # ============================================================================ #
-# TESTING FUNCTIONS
+# _captureTimestream
+def _captureTimestream(N_packets):
+    """
+    fs = 512e6/(1024*1024) # 488.28125 Hz
+    e.g. N_packets=1000 is 2.048 s timestream
+    """
+
+    ip = "192.168.3.40" # TODO: get from cfg
+    port = 4096
+
+    timestream = TimeStream(host=ip, port=port)
+
+    # capture an N packets timestream
+    timestream.capturePackets(N_packets) 
+
+    # slice out II and QQ tods (1024 channel I and Q arrays)    
+    II, QQ = timestream.packetsIIQQ()
+    
+    # slice out packet count tod and convert from bytes
+    packet_counts = np.array([
+        np.frombuffer(p, dtype="<i4").astype("int")
+        for p in timestream.packetsHH('packet count')])
+
+    return II, QQ, packet_counts
+
+
 # ============================================================================ #
+# loopbackCapture
+def loopbackCapture():
+
+    print("Running loopback capture...")
+
+    bid = 1
+    drid = 1
+    N_packets = 4096 # 4096 samples ~ 8.4 s
+
+    _sendCom(bid, drid, "alcove_base.setNCLO", 500)        # set LO
+    _sendCom(bid, drid, "tones.writeNewVnaComb")           # gen. tone comb
+    _sendCom(bid, drid, "alcove_base.timestreamOn", 1)     # start streaming
+    II, QQ, packet_counts = _captureTimestream(N_packets)  # capture tods
+    _sendCom(bid, drid, "alcove_base.timestreamOn", 0)     # stop streaming
+
+    fname = io.saveToTmp(
+        np.array([II, QQ, packet_counts]), 
+        filename=f'loopback', 
+        use_timestamp=True)
+
+    
 
 
+'''
 # ============================================================================ #
 # captureTimestream
 def captureTimestream(packets, ip, port=4096):
@@ -207,6 +264,7 @@ def adriansNoiseTest():
 
     except Exception: 
         traceback.print_exc()
+'''
 
 '''
 def tonysHeatingTest():

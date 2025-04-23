@@ -52,10 +52,11 @@ def _com():
         7:drone_control.action,
         8:monitorMode,
         9:pollFeeds,
-        10:test.tonePowerTest,
-        11:test.adriansNoiseTest,
-        12:test.targetSweepPowerTest,
+        # 10:test.tonePowerTest,
+        # 11:test.adriansNoiseTest,
+        # 12:test.targetSweepPowerTest,
         # 13:test.targetSweepAndNoiseSweep,
+        14:test.loopbackCapture,
     }
 
 
