@@ -103,11 +103,12 @@ class TimeStream:
             bytearray(self.sock.recvfrom(buffer_size)[0]) # (message, address)
             for _ in range(N)])
         
-        print(self.packets[95])
-        print(self.packets[96])
-        print(self.packets[97])
-        print(self.packets[98])
-        print(self.packets[99])
+        d = self.packets[0]
+        print(d[95])
+        print(d[96])
+        print(d[97])
+        print(d[98])
+        print(d[99])
 
         return True
     
