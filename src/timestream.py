@@ -118,7 +118,7 @@ class TimeStream:
             return None
         
         i, f = self.packet_struct['data payload'] # initial and final bytes
-        print(IIQQ.shape)
+        print(self.packets.shape)
         IIQQ = [
             np.frombuffer(p[i:f+1], dtype="<i4").astype("float") 
             for p in self.packets]
