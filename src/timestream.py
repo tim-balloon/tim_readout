@@ -45,12 +45,6 @@ class TimeStream:
             'ptp timestamp':            (8242, 8253)
         }
 
-        # hack to fix wrong struct? Where's the headers?
-        self.packet_struct = {
-            p : self.packet_struct[p] - 42
-            for p in self.packet_struct
-        }
-
         self.packets = None
 
 
@@ -125,6 +119,7 @@ class TimeStream:
         
         i, f = self.packet_struct['data payload'] # initial and final bytes
         # print(self.packets.shape)
+        i-=42; f-=42 # where's the headers?
         IIQQ = [
             np.frombuffer(p[i:f+1], dtype="<i4").astype("float") 
             for p in self.packets]
@@ -151,6 +146,7 @@ class TimeStream:
             return None
 
         i, f = self.packet_struct[field_name] # initial and final bytes
+        i-=42; f-=42 # where's the headers?
         HH = np.array([
             p[i:f+1] # should we convert?
             for p in self.packets])
