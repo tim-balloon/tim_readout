@@ -62,8 +62,8 @@ def loopbackCapture():
 
     bid = 1
     drid = 1
-    # N_packets = 4096 # 4096 samples ~ 8.4 s
-    N_packets = 3
+    N_packets = 4096 # 4096 samples ~ 8.4 s
+    # N_packets = 3
 
     # _sendCom(bid, drid, "alcove_base.setNCLO", 500)        # set LO
     # _sendCom(bid, drid, "tones.writeNewVnaComb")           # gen. tone comb
@@ -81,9 +81,9 @@ def loopbackCapture():
     print(QQ[:,:10])
     print(packet_counts[:10])
 
-    fname = io.saveToTmp(II, filename=f'loopback_II', use_timestamp=True)
-    fname = io.saveToTmp(QQ, filename=f'loopback_QQ', use_timestamp=True)
-    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts', use_timestamp=True)
+    fname = io.saveToTmp(II, filename=f'loopback_II_', use_timestamp=True)
+    fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', use_timestamp=True)
+    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
 
     # fname = io.saveToTmp(
     #     [II, QQ, packet_counts], 
