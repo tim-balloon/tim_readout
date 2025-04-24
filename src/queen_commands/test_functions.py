@@ -63,7 +63,7 @@ def loopbackCapture():
     bid = 1
     drid = 1
     # N_packets = 4096 # 4096 samples ~ 8.4 s
-    N_packets = 10
+    N_packets = 3
 
     # _sendCom(bid, drid, "alcove_base.setNCLO", 500)        # set LO
     # _sendCom(bid, drid, "tones.writeNewVnaComb")           # gen. tone comb
@@ -76,6 +76,10 @@ def loopbackCapture():
     _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
     II, QQ, packet_counts = _captureTimestream(N_packets)  # capture tods
     _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
+
+    print(II[:,:10])
+    print(QQ[:,:10])
+    print(packet_counts[:10])
 
     fname = io.saveToTmp(
         np.array([II, QQ, packet_counts]), 
