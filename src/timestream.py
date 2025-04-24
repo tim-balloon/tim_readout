@@ -123,7 +123,7 @@ class TimeStream:
         # print(self.packets.shape)
         i-=42; f-=42 # where's the headers?
         IIQQ = [
-            np.frombuffer(p[i:f+1], dtype=">i4").astype("float") 
+            np.frombuffer(p[i:f+1], dtype="<i4").astype("float") 
             for p in self.packets]
 
         II = np.array([p[0::2] for p in IIQQ]) # 1024 I tods
