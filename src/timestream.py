@@ -103,7 +103,7 @@ class TimeStream:
             bytearray(self.sock.recvfrom(buffer_size)[0]) # (message, address)
             for _ in range(N)])
         
-        print(self.packets[0][750:790])
+        # print(self.packets[0][750:790])
 
         return True
     
@@ -123,11 +123,13 @@ class TimeStream:
         # print(self.packets.shape)
         i-=42; f-=42 # where's the headers?
         IIQQ = [
-            np.frombuffer(p[i:f+1], dtype="<i4").astype("float") 
+            np.frombuffer(p[i:f+1], dtype=">i4").astype("float") 
             for p in self.packets]
 
         II = np.array([p[0::2] for p in IIQQ]) # 1024 I tods
         QQ = np.array([p[1::2] for p in IIQQ]) # 1024 Q tods
+
+        print(II[0][90:110])
 
         return II, QQ
 
