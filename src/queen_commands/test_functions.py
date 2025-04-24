@@ -65,30 +65,19 @@ def loopbackCapture():
     N_packets = 4096 # 4096 samples ~ 8.4 s
     # N_packets = 3
 
-    # _sendCom(bid, drid, "alcove_base.setNCLO", 500)        # set LO
-    # _sendCom(bid, drid, "tones.writeNewVnaComb")           # gen. tone comb
-    # _sendCom(bid, drid, "alcove_base.timestreamOn", 1)     # start streaming
-    # II, QQ, packet_counts = _captureTimestream(N_packets)  # capture tods
-    # _sendCom(bid, drid, "alcove_base.timestreamOn", 0)     # stop streaming
-
     _sendCom(bid, drid, "setNCLO", 500)        # set LO
-    _sendCom(bid, drid, "writeNewVnaComb")           # gen. tone comb
+    _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
     _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
     II, QQ, packet_counts = _captureTimestream(N_packets)  # capture tods
     _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
 
-    print(II[:,:10])
-    print(QQ[:,:10])
-    print(packet_counts[:10])
+    # print(II[:,:10])
+    # print(QQ[:,:10])
+    # print(packet_counts[:10])
 
     fname = io.saveToTmp(II, filename=f'loopback_II_', use_timestamp=True)
     fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', use_timestamp=True)
     fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
-
-    # fname = io.saveToTmp(
-    #     [II, QQ, packet_counts], 
-    #     filename=f'loopback', 
-    #     use_timestamp=True)
  
 
 
