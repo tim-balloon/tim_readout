@@ -48,7 +48,7 @@ def _captureTimestream(N_packets):
     
     # slice out packet count tod and convert from bytes
     packet_counts = np.array([
-        np.frombuffer(p, dtype=">u4").astype("int")
+        np.frombuffer(p, dtype=">u4").astype("int")[0]
         for p in timestream.packetsHH('packet count')])
 
     return II, QQ, packet_counts
@@ -80,6 +80,10 @@ def loopbackCapture():
     print(II[:,:10])
     print(QQ[:,:10])
     print(packet_counts[:10])
+
+    fname = io.saveToTmp(II, filename=f'loopback_II', use_timestamp=True)
+    fname = io.saveToTmp(QQ, filename=f'loopback_QQ', use_timestamp=True)
+    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts', use_timestamp=True)
 
     # fname = io.saveToTmp(
     #     np.array([II, QQ, packet_counts]), 
