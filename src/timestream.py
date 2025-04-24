@@ -102,6 +102,8 @@ class TimeStream:
         self.packets = np.array([
             bytearray(self.sock.recvfrom(buffer_size)[0]) # (message, address)
             for _ in range(N)])
+        
+        print(self.packets)
 
         return True
     
