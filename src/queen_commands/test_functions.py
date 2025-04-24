@@ -81,14 +81,14 @@ def loopbackCapture():
     print(QQ[:,:10])
     print(packet_counts[:10])
 
-    fname = io.saveToTmp(II, filename=f'loopback_II', use_timestamp=True)
-    fname = io.saveToTmp(QQ, filename=f'loopback_QQ', use_timestamp=True)
-    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts', use_timestamp=True)
+    # fname = io.saveToTmp(II, filename=f'loopback_II', use_timestamp=True)
+    # fname = io.saveToTmp(QQ, filename=f'loopback_QQ', use_timestamp=True)
+    # fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts', use_timestamp=True)
 
-    # fname = io.saveToTmp(
-    #     np.array([II, QQ, packet_counts]), 
-    #     filename=f'loopback', 
-    #     use_timestamp=True)
+    fname = io.saveToTmp(
+        [II, QQ, packet_counts], 
+        filename=f'loopback', 
+        use_timestamp=True)
 
     
 
