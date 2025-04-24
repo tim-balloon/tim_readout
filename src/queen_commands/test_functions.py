@@ -48,7 +48,7 @@ def _captureTimestream(N_packets):
     
     # slice out packet count tod and convert from bytes
     packet_counts = np.array([
-        np.frombuffer(p, dtype=">i4").astype("int")
+        np.frombuffer(p, dtype=">u4").astype("int")
         for p in timestream.packetsHH('packet count')])
 
     return II, QQ, packet_counts
