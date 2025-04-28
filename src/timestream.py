@@ -21,28 +21,11 @@ class TimeStream:
         self.sock.bind((self.host, self.port))
 
         self.packet_struct = {
-            "mac destination":          (0,    5),
-            "mac source":               (6,    11),
-            "eth type":                 (12,   13), 
-            "header length":            (14,   14),
-            "congestion notification":  (15,   15),
-            "total length":             (16,   17),
-            "Identification":           (18,   19),
-            "fragment offset":          (20,   21),
-            "time to live":             (22,   22),
-            "protocol":                 (23,   23),
-            "header checksum":          (24,   25),
-            "IP source":                (26,   29),
-            "IP destination":           (30,   33),
-            "source port":              (34,   35),
-            "destination port":         (36,   37),
-            "data payload length":      (38,   39),
-            "data payload checksum":    (40,   41),
-            "data payload":             (42,   8233),
-            "packet info":              (8234, 8235),
-            "channel count":            (8236, 8237),
-            "packet count":             (8238, 8241),
-            "ptp timestamp":            (8242, 8253)
+            "data payload":             (0,    8191),
+            "packet info":              (8192, 8193),
+            "channel count":            (8194, 8195),
+            "packet count":             (8196, 8199),
+            "ptp timestamp":            (8200, 8211)
         }
 
         self.packets = None
@@ -59,8 +42,6 @@ class TimeStream:
         self.packets = np.array([
             bytearray(self.sock.recvfrom(buffer_size)[0]) # (message, address)
             for _ in range(N)])
-        
-        # print(self.packets[0][750:790])
 
         return True
     
@@ -77,8 +58,6 @@ class TimeStream:
             return None
         
         i, f = self.packet_struct['data payload'] # initial and final bytes
-        # print(self.packets.shape)
-        i-=42; f-=42 # where's the headers?
         IIQQ = [
             np.frombuffer(p[i:f+1], dtype="<i4").astype("float") 
             for p in self.packets]
@@ -107,7 +86,6 @@ class TimeStream:
             return None
 
         i, f = self.packet_struct[field_name] # initial and final bytes
-        i-=42; f-=42 # where's the headers?
         HH = np.array([
             p[i:f+1] # should we convert?
             for p in self.packets])
@@ -119,41 +97,3 @@ class TimeStream:
 # __del__
     def __del__(self):
         self.sock.close()
-
-
-
-
-'''
-def capturePacket(self, buffer_size=9000):
-    message, address = self.sock.recvfrom(buffer_size)
-    return bytearray(message)
-    # return message.decode(), address
-
-
-def capturePackets(self, N):
-    buffer_size = 9000
-    return np.array([self.capturePacket(buffer_size) for _ in range(N)])
-
-
-def convertPackets(self, packets):
-    return np.array([
-        np.frombuffer(p, dtype="<i").astype("float")
-        for p in packets])
-
-
-def getTimeStreamChunk(self, N):
-    """Grab a chunk of N packets from the timestream.
-    Returns I and Q.
-    """
-
-    x = self.captureNpackets(N)
-    x = self.convertPackets(x)
-
-    I, Q = x[:,0::2].T, x[:,1::2].T
-
-    # max number of useable channels
-    I = I[:1022]
-    Q = Q[:1022]
-    
-    return I, Q
-'''
