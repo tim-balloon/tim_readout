@@ -370,7 +370,7 @@ def publishResponse(resp, r, chan_str):
         r.publish(chan.pubRet, ret) # publish resp with Redis on return channel
 
     except Exception as e:
-        print(f' Publish response failed.')
+        print(f' Publish response failed with error: {e}')
     else:
         # print(f' Publish response successful.')
         pass
