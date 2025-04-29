@@ -181,12 +181,15 @@ def _getVersApt():
 # ============================================================================ #
 # _getConfigBoard
 def _getConfigBoard():
-    '''Dictionary of board config variables.'''
+    '''Dictionary of board config variables.
+    Note: Only int, float, and str variables are captured.'''
 
     attributes = dir(cfg_b)
     variables = {
         attr: getattr(cfg_b, attr) 
-        for attr in attributes if not attr.startswith("__")
+        for attr in attributes 
+        if not attr.startswith("__")
+        and isinstance(getattr(cfg_b, attr), (int, float, str))
         }
 
     return {'config:board':variables}
@@ -200,7 +203,9 @@ def _getConfigQueen():
     attributes = dir(cfg_q)
     variables = {
         attr: getattr(cfg_q, attr) 
-        for attr in attributes if not attr.startswith("__")
+        for attr in attributes 
+        if not attr.startswith("__")
+        and isinstance(getattr(cfg_b, attr), (int, float, str))
         }
 
     return {'config:queen':variables}
