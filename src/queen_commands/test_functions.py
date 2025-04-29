@@ -107,7 +107,7 @@ def loopbackCapture_old():
 
     fname = io.saveToTmp(II, filename=f'loopback_II_', use_timestamp=True)
     fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', use_timestamp=True)
-    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
+    # fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
 
 
 # ============================================================================ #
@@ -133,7 +133,7 @@ def loopbackCapture():
 
     fname = io.saveToTmp(II, filename=f'loopback_old_II_', use_timestamp=True)
     fname = io.saveToTmp(QQ, filename=f'loopback_old_QQ_', use_timestamp=True)
-    # fname = io.saveToTmp(packet_counts, filename=f'loopback_old_packet_counts_', use_timestamp=True)
+    fname = io.saveToTmp(packet_counts, filename=f'loopback_old_packet_counts_', use_timestamp=True)
  
 
 
