@@ -61,7 +61,7 @@ def loopbackCapture():
     print("Running loopback capture...")
 
     bid = 1
-    drid = 2
+    drid = 1
     # N_packets = 4096 # 4096 samples ~ 8.4 s
     N_packets = 10
 
