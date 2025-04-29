@@ -95,7 +95,7 @@ def loopbackCapture_old():
     # N_packets = 4096 # 4096 samples ~ 8.4 s
     N_packets = 10
 
-    _sendCom(bid, drid, "setNCLO", 500)        # set LO
+    _sendCom(bid, drid, "setNCLO", 600)        # set LO
     _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
     _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
     II,QQ = _captureTimestream_old(N_packets, ip, port)
@@ -121,7 +121,7 @@ def loopbackCapture():
     # N_packets = 4096 # 4096 samples ~ 8.4 s
     N_packets = 10
 
-    _sendCom(bid, drid, "setNCLO", 500)        # set LO
+    _sendCom(bid, drid, "setNCLO", 600)        # set LO
     _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
     _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
     II, QQ, packet_counts = _captureTimestream(N_packets)  # capture tods
