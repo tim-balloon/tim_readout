@@ -69,9 +69,9 @@ def sys_info():
         _getVersPrimecam_readout(),  # primecam_readout version
         _getVersFirmwareRfsoc(),     # firmware version
         _getTemps(),                 # board temperature sensors
-        _getRecentAuthLogEvents(),   # recent auth log entries
-        _getRecentSysLogEvents(),    # recent sys log entries
-        _getRecentDmesgEvents(),     # recent dmesg entries
+        # _getRecentAuthLogEvents(),   # recent auth log entries
+        # _getRecentSysLogEvents(),    # recent sys log entries
+        # _getRecentDmesgEvents(),     # recent dmesg entries
         _getNetwork(),               # network connections info
     ]
 
