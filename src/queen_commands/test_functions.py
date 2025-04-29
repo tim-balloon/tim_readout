@@ -63,7 +63,7 @@ def loopbackCapture():
     bid = 1
     drid = 2
     # N_packets = 4096 # 4096 samples ~ 8.4 s
-    N_packets = 4096
+    N_packets = 10
 
     _sendCom(bid, drid, "setNCLO", 500)        # set LO
     _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
