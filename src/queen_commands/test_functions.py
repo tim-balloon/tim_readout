@@ -91,7 +91,7 @@ def loopbackCapture_old():
     port = 4096
 
     bid = 1
-    drid = 3
+    drid = 1
     # N_packets = 4096 # 4096 samples ~ 8.4 s
     N_packets = 10
 
