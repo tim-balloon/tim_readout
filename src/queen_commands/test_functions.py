@@ -15,8 +15,6 @@ import alcove_commands.alcove_base as alcove_base
 import queen_commands.control_io as io
 from timestream import TimeStream
 
-from timestream import TimeStream_old
-
 
 
 
