@@ -52,8 +52,16 @@ def _captureTimestream(N_packets):
     packet_counts = np.array([
         np.frombuffer(p, dtype=">u4").astype("int")[0]
         for p in timestream.packetsHH('packet count')])
+    
+    ptp_timestamps = np.array([
+        np.array([
+            np.frombuffer(p.data[:8], dtype=">u8")[0],  # s, 8 bytes
+            np.frombuffer(p.data[8:], dtype=">u4")[0]   # ns, 4 bytes
+        ], dtype=np.uint64) # 12 bytes, seconds and nanoseconds
+        for p in timestream.packetsHH('ptp timestamp')
+    ])
 
-    return II, QQ, packet_counts
+    return II, QQ, packet_counts, ptp_timestamps
 
 
 
@@ -77,16 +85,15 @@ def loopbackCapture():
     _sendCom(bid, drid, "setNCLO", 600)        # set LO
     _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
     _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
-    II, QQ, packet_counts = _captureTimestream(N_packets)  # capture tods
+    packets = _captureTimestream(N_packets)    # capture tods
     _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
 
-    # print(II[:,:10])
-    # print(QQ[:,:10])
-    # print(packet_counts[:10])
+    II, QQ, packet_counts, ptp_timestamps = packets
 
     fname = io.saveToTmp(II, filename=f'loopback_II_', use_timestamp=True)
     fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', use_timestamp=True)
     fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
+    fname = io.saveToTmp(ptp_timestamps, filename=f'loopback_ptp_timestamps_', use_timestamp=True)
  
 
 
