@@ -57,7 +57,6 @@ def _com():
         # 12:test.targetSweepPowerTest,
         # 13:test.targetSweepAndNoiseSweep,
         14:test.loopbackCapture,
-        15:test.loopbackCapture_old,
     }
 
 

@@ -144,6 +144,8 @@ def writeChannelCount(num_chans):
     udp_control.write(0x08, val)
 
 
+# ============================================================================ #
+# generateWaveDdr4 
 def generateWaveDdr4(freqs, amps, phis):
     '''
     Generates a DDR4 waveform and associated phase correction data.

@@ -32,22 +32,6 @@ def _sendCom(bid, drid, com_str, args_str=None):
 
 
 # ============================================================================ #
-# _captureTimestream_old
-def _captureTimestream_old(packets, ip, port=4096):
-    """Capture I and Q of timestream.
-
-    packets: Number of packets to capture.
-    ip: IP address to capture from.
-    port: IP port.
-    """
-
-    timestream = TimeStream_old(host=ip, port=port)
-    I, Q = timestream.getTimeStreamChunk(packets)
-
-    return I,Q
-
-
-# ============================================================================ #
 # _captureTimestream
 def _captureTimestream(N_packets):
     """
@@ -82,35 +66,6 @@ def _captureTimestream(N_packets):
 
 
 # ============================================================================ #
-# loopbackCapture_old
-def loopbackCapture_old():
-
-    print("Running loopback capture...")
-
-    ip = "192.168.3.40" # TODO: get from cfg
-    port = 4096
-
-    bid = 1
-    drid = 1
-    # N_packets = 4096 # 4096 samples ~ 8.4 s
-    N_packets = 10
-
-    _sendCom(bid, drid, "setNCLO", 600)        # set LO
-    _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
-    _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
-    II,QQ = _captureTimestream_old(N_packets, ip, port)
-    _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
-
-    # print(II[:,:10])
-    # print(QQ[:,:10])
-    # print(packet_counts[:10])
-
-    fname = io.saveToTmp(II, filename=f'loopback_II_', use_timestamp=True)
-    fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', use_timestamp=True)
-    # fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
-
-
-# ============================================================================ #
 # loopbackCapture
 def loopbackCapture():
 
@@ -118,8 +73,8 @@ def loopbackCapture():
 
     bid = 1
     drid = 1
-    # N_packets = 4096 # 4096 samples ~ 8.4 s
-    N_packets = 10
+    N_packets = 4096 # 4096 samples ~ 8.4 s
+    # N_packets = 10
 
     _sendCom(bid, drid, "setNCLO", 600)        # set LO
     _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
@@ -131,9 +86,9 @@ def loopbackCapture():
     # print(QQ[:,:10])
     # print(packet_counts[:10])
 
-    fname = io.saveToTmp(II, filename=f'loopback_old_II_', use_timestamp=True)
-    fname = io.saveToTmp(QQ, filename=f'loopback_old_QQ_', use_timestamp=True)
-    fname = io.saveToTmp(packet_counts, filename=f'loopback_old_packet_counts_', use_timestamp=True)
+    fname = io.saveToTmp(II, filename=f'loopback_II_', use_timestamp=True)
+    fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', use_timestamp=True)
+    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', use_timestamp=True)
  
 
 
