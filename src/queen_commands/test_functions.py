@@ -38,7 +38,7 @@ def _captureTimestream(N_packets):
     """
 
     ip = "192.168.3.40" # TODO: get from cfg
-    port = 4096*4
+    port = 4096
 
     timestream = TimeStream(host=ip, port=port)
 
@@ -47,11 +47,11 @@ def _captureTimestream(N_packets):
 
     # slice out II and QQ tods (1024 channel I and Q arrays)    
     II, QQ = timestream.packetsIIQQ()
-    
+
     # slice out packet count tod and convert from bytes
     packet_counts = np.array([
-        np.frombuffer(p, dtype=">u4").astype("int")[0]
-        for p in timestream.packetsHH('packet count')])
+        int.from_bytes(p, byteorder='big')
+        for p in timestream.packetsHH('packet count')])    
     
     # slice out ptp timestamps tod
     def parsePtpTimestamp(b):
@@ -81,7 +81,7 @@ def loopbackCapture():
 
     bid = 1
     drid = 1
-    N_packets = 4096 # 4096 samples ~ 8.4 s
+    N_packets = 4096*4 # 4096 samples ~ 8.4 s
     # N_packets = 10
 
     _sendCom(bid, drid, "setNCLO", 600)        # set LO
