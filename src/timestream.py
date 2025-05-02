@@ -65,8 +65,6 @@ class TimeStream:
         II = np.array([p[0::2] for p in IIQQ]) # 1024 I tods
         QQ = np.array([p[1::2] for p in IIQQ]) # 1024 Q tods
 
-        print(II[0][90:110])
-
         return II, QQ
 
 
@@ -87,7 +85,7 @@ class TimeStream:
 
         i, f = self.packet_struct[field_name] # initial and final bytes
         HH = np.array([
-            p[i:f+1] # should we convert?
+            p[i:f+1] # unconverted as each is different, so return bytes
             for p in self.packets])
 
         return HH
