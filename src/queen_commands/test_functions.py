@@ -57,10 +57,14 @@ def _captureTimestream(N_packets):
         print(p)
 
     # slice out the ptp timestamps tod
+    # def parsePtpTimestamp(b):
+    #     seconds = int.from_bytes(b[:6], byteorder='big')
+    #     nanoseconds = int.from_bytes(b[6:], byteorder='big')
+    #     return seconds + nanoseconds * 1e-9
     def parsePtpTimestamp(b):
         seconds = int.from_bytes(b[:6], byteorder='big')
-        nanoseconds = int.from_bytes(b[6:], byteorder='big')
-        return seconds + nanoseconds * 1e-9
+        fractional = int.from_bytes(b[6:], byteorder='big') / (1 << 48)
+        return seconds + fractional
     ptp_timestamps = np.array([
         parsePtpTimestamp(p)
         for p in timestream.packetsHH('ptp timestamp')
