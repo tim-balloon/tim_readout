@@ -53,6 +53,9 @@ def _captureTimestream(N_packets):
         np.frombuffer(p, dtype=">u4").astype("int")[0]
         for p in timestream.packetsHH('packet count')])
     
+    for p in timestream.packetsHH('ptp timestamp'):
+        print(p)
+
     # slice out the ptp timestamps tod
     def parsePtpTimestamp(b):
         seconds = int.from_bytes(b[:6], byteorder='big')
