@@ -53,13 +53,23 @@ def _captureTimestream(N_packets):
         np.frombuffer(p, dtype=">u4").astype("int")[0]
         for p in timestream.packetsHH('packet count')])
     
+    # slice out the ptp timestamps tod
+    def parsePtpTimestamp(b):
+        seconds = int.from_bytes(b[:6], byteorder='big')
+        nanoseconds = int.from_bytes(b[6:], byteorder='big')
+        return seconds + nanoseconds * 1e-9
     ptp_timestamps = np.array([
-        np.array([
-            np.frombuffer(p.data[:8], dtype=">u8")[0],  # s, 8 bytes
-            np.frombuffer(p.data[8:], dtype=">u4")[0]   # ns, 4 bytes
-        ], dtype=np.uint64) # 12 bytes, seconds and nanoseconds
+        parsePtpTimestamp(p)
         for p in timestream.packetsHH('ptp timestamp')
     ])
+
+    # ptp_timestamps = np.array([
+    #     np.array([
+    #         np.frombuffer(p.data[:8], dtype=">u8")[0],  # s, 8 bytes
+    #         np.frombuffer(p.data[8:], dtype=">u4")[0]   # ns, 4 bytes
+    #     ], dtype=np.uint64) # 12 bytes, seconds and nanoseconds
+    #     for p in timestream.packetsHH('ptp timestamp')
+    # ])
 
     return II, QQ, packet_counts, ptp_timestamps
 
