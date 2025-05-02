@@ -133,6 +133,12 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
     f_center = float(f_center)
     N_accums = int(N_accums)
 
+    # sort ascending and remove exact duplicates
+    # for example:
+        # target find resonators uses min in tone channel
+        # so two resonators in same tone channel will lead to duplicates
+    freqs = np.unique(freqs)
+
     # build LO steps
     if chan_bandwidth: # LO bandwidth given
         bw = float(chan_bandwidth) # MHz
