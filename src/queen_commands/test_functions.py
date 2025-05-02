@@ -38,7 +38,7 @@ def _captureTimestream(N_packets):
     """
 
     ip = "192.168.3.40" # TODO: get from cfg
-    port = 4096
+    port = 4096*4
 
     timestream = TimeStream(host=ip, port=port)
 
