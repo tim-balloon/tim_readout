@@ -69,25 +69,27 @@ def timestreamOn(on=True):
     # current drone channel
     chan = cfg_b.drid
 
-    # # bit values for this drone (01 for on, 10 for off)
-    # val = 0b01 if on else 0b10
+    # bit values for this drone (01 for on, 10 for off)
+    val = 0b01 if on else 0b10
 
-    # # construct the 8-bit register value with all zeros except for this drone
-    # reg_value = val << ((chan - 1) * 2)
-
-    reg_value = 0b1111
+    # construct the 8-bit register value with all zeros except for this drone
+    reg_value = val << ((chan - 1) * 2)
 
     # Write the new register value
     udp_control.write(0x00, reg_value)
 
 
 # ============================================================================ #
-# timestreamOn
-def receiveChainsOn():
+# timestreamsOn_testing
+def timestreamsOn_testing():
     """Start board receive chains and packetization.
     """
 
+    # enable receive chains 
     cfg_b.firmware.receive_timing_gpio2.write(0x08, 1)
+
+    # turn on all timestreams
+    cfg_b.firmware.gpio_udp_info_control.write(0x00, 0b1111)
 
 
 # ============================================================================ #
