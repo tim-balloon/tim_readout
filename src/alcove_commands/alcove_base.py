@@ -69,11 +69,13 @@ def timestreamOn(on=True):
     # current drone channel
     chan = cfg_b.drid
 
-    # bit values for this drone (01 for on, 10 for off)
-    val = 0b01 if on else 0b10
+    # # bit values for this drone (01 for on, 10 for off)
+    # val = 0b01 if on else 0b10
 
-    # construct the 8-bit register value with all zeros except for this drone
-    reg_value = val << ((chan - 1) * 2)
+    # # construct the 8-bit register value with all zeros except for this drone
+    # reg_value = val << ((chan - 1) * 2)
+
+    reg_value = 0b1111
 
     # Write the new register value
     udp_control.write(0x00, reg_value)
