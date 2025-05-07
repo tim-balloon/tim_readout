@@ -80,12 +80,21 @@ def timestreamOn(on=True):
 
 
 # ============================================================================ #
+# timestreamOn
+def receiveChainsOn():
+    """Start board receive chains and packetization.
+    """
+
+    cfg_b.firmware.receive_timing_gpio2.write(0x08, 1)
+
+
+# ============================================================================ #
 # userPacketInfo 
 def userPacketInfo(data):
     '''Write 16 bits of data to include in the UDP timestream packet.
     Data is drone specific.
 
-    data: 16 bit int to write.
+    data: 16 bit int to write.8212+42
         Note that Redis will convert user input to string.
         e.g. 255 can be sent as:
             '255', '255.0', '0xFF', '0b11111111', '0o377'
@@ -336,6 +345,8 @@ def _setNCLO(chan, lofreq):
     adc.UpdateEvent(xrfdc.EVENT_MIXER)
     dac.UpdateEvent(xrfdc.EVENT_MIXER)
 
+# ============================================================================ #
+# _getNCLO
 def _getNCLO(chan):
 
     rf_data_conv = cfg_b.firmware.usp_rf_data_converter_0
