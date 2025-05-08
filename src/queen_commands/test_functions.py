@@ -51,7 +51,12 @@ def _captureTimestream(N_packets):
     # slice out packet info and convert from bytes
     packet_infos = np.array([
         int.from_bytes(p, byteorder='big')
-        for p in timestream.packetsHH('packet info')])  
+        for p in timestream.packetsHH('packet info')]) 
+    
+    # slice out channel count and convert from bytes
+    channel_counts = np.array([
+        int.from_bytes(p, byteorder='big')
+        for p in timestream.packetsHH('channel count')]) 
 
     # slice out packet count tod and convert from bytes
     packet_counts = np.array([
@@ -68,7 +73,7 @@ def _captureTimestream(N_packets):
         for p in timestream.packetsHH('ptp timestamp')
     ])
 
-    return II, QQ, packet_counts, ptp_timestamps, packet_infos
+    return II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts
 
 
 
@@ -95,7 +100,7 @@ def loopbackCapture():
     packets = _captureTimestream(N_packets)    # capture tods
     _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
 
-    II, QQ, packet_counts, ptp_timestamps, packet_infos = packets
+    II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts = packets
 
     fname = io.saveToTmp(II, filename=f'loopback_II_', 
                          use_timestamp=True)
@@ -104,6 +109,8 @@ def loopbackCapture():
     fname = io.saveToTmp(packet_infos, filename=f'loopback_packet_infos_',
                          use_timestamp=True)
     fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', 
+                         use_timestamp=True)
+    fname = io.saveToTmp(channel_counts, filename=f'loopback_channel_counts_', 
                          use_timestamp=True)
     fname = io.saveToTmp(ptp_timestamps, filename=f'loopback_ptp_timestamps_',
                          use_timestamp=True)
