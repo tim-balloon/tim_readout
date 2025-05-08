@@ -30,6 +30,17 @@ def _sendCom(bid, drid, com_str, args_str=None):
 
 
 # ============================================================================ #
+# _sendComAll
+def _sendComAll(com_str, args_str=None):
+    """
+    """
+
+    com_num = alcove.comNumFromStr(com_str)
+    return queen.alcoveCommand(
+        com_num, all_boards=True, args=args_str)
+
+
+# ============================================================================ #
 # _captureTimestream
 def _captureTimestream(N_packets):
     """
@@ -97,11 +108,11 @@ def loopbackCapture():
     N_packets = 4096*4 # 4096 samples ~ 8.4 s
     # N_packets = 10
 
-    _sendCom(bid, drid, "setNCLO", 600)        # set LO
-    _sendCom(bid, drid, "writeNewVnaComb")     # gen. tone comb
-    _sendCom(bid, drid, "timestreamOn", 1)     # start streaming
+    # _sendCom(bid, drid, "setNCLO", 600)        # set LO
+    _sendComAll(bid, drid, "writeNewVnaComb")     # gen. tone comb
+    _sendComAll(bid, drid, "timestreamOn", 1)     # start streaming
     packets = _captureTimestream(N_packets)    # capture tods
-    _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
+    # _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
 
     II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = packets
 
