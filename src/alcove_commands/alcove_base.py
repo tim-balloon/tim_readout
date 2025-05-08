@@ -80,16 +80,12 @@ def timestreamOn(on=True):
 
 
 # ============================================================================ #
-# timestreamsOn_testing
-def timestreamsOn_testing():
+# startChains
+def startChains():
     """Start board receive chains and packetization.
     """
 
-    # enable receive chains 
     cfg_b.firmware.receive_timing_gpio2.write(0x08, 1)
-
-    # turn on all timestreams
-    cfg_b.firmware.gpio_udp_info_control.write(0x00, 0b1111)
 
 
 # ============================================================================ #

@@ -112,11 +112,13 @@ try:
 
 
     # ======================================================================== #
-    # Packets
+    # Chains / Packets
     # ======================================================================== #
 
-    # setAccumLen for drone 1 - all others are timed from this
-    firmware.chan1.dsp_regs_0.write(0x08, cfg_b.accum_len)
+    # set packet timing gaps
+    firmware.receive_timing_gpio1.write(0x00, 131072-4)
+    firmware.receive_timing_gpio1.write(0x08, 131072-4)
+    firmware.receive_timing_gpio2.write(0x00, 131072-4)
 
 
 
