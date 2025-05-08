@@ -45,6 +45,9 @@ def _captureTimestream(N_packets):
     # capture an N packets timestream
     timestream.capturePackets(N_packets) 
 
+    # get the sender IPs
+    packet_ips = timestream.packetsIP()
+
     # slice out II and QQ tods (1024 channel I and Q arrays)    
     II, QQ = timestream.packetsIIQQ()
 
@@ -73,7 +76,7 @@ def _captureTimestream(N_packets):
         for p in timestream.packetsHH('ptp timestamp')
     ])
 
-    return II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts
+    return II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips
 
 
 
@@ -100,8 +103,10 @@ def loopbackCapture():
     packets = _captureTimestream(N_packets)    # capture tods
     _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
 
-    II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts = packets
+    II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = packets
 
+    fname = io.saveToTmp(packet_ips, filename=f'loopback_packet_ips_', 
+                         use_timestamp=True)
     fname = io.saveToTmp(II, filename=f'loopback_II_', 
                          use_timestamp=True)
     fname = io.saveToTmp(QQ, filename=f'loopback_QQ_', 

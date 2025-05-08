@@ -29,6 +29,7 @@ class TimeStream:
         }
 
         self.packets = None
+        self.addresses = None
 
 
 # ============================================================================ #
@@ -38,10 +39,9 @@ class TimeStream:
         """
 
         buffer_size = 9000
-
-        self.packets = np.array([
-            bytearray(self.sock.recvfrom(buffer_size)[0]) # (message, address)
-            for _ in range(N)])
+        rcv = [self.sock.recvfrom(buffer_size) for _ in range(N)]
+        self.packets = np.array([bytearray(data) for data,_ in rcv])
+        self.addresses = np.array([addr[0] for _,addr in rcv])
 
         return True
     
@@ -89,6 +89,17 @@ class TimeStream:
             for p in self.packets])
 
         return HH
+    
+
+    def packetsIP(self):
+        """IP (sender) array from packets.
+        """
+
+        if self.addresses is None:
+            print(f"Error: Capture some packets first!")
+            return None
+        
+        return self.addresses
 
 
 # ============================================================================ #
