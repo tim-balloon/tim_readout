@@ -71,7 +71,7 @@ def _com():
         65:clean_io.cleanBoardDroneDirs,
         70:alcove_base.timestreamOn,
         71:alcove_base.userPacketInfo,
-        72:alcove_base.timestreamsOn_testing, # 
+        72:alcove_base.startChains, # 
         80:alcove_base.setAtten
     }
 
