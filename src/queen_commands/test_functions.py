@@ -109,8 +109,8 @@ def loopbackCapture():
     # N_packets = 10
 
     # _sendCom(bid, drid, "setNCLO", 600)        # set LO
-    _sendComAll(bid, drid, "writeNewVnaComb")     # gen. tone comb
-    _sendComAll(bid, drid, "timestreamOn", 1)     # start streaming
+    _sendComAll("writeNewVnaComb")     # gen. tone comb
+    _sendComAll("timestreamOn", 1)     # start streaming
     packets = _captureTimestream(N_packets)    # capture tods
     # _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
 
