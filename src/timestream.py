@@ -106,3 +106,29 @@ class TimeStream:
 # __del__
     def __del__(self):
         self.sock.close()
+
+
+
+
+# ============================================================================ #
+# parsePtpTimestamp
+def parsePtpTimestamp(b: bytes) -> float:
+    """Parse a 12-byte PTP timestamp into a float timestamp (seconds + nanoseconds).
+    """
+
+    if len(b) != 12:
+        raise ValueError("Input must be exactly 12 bytes.")
+
+    # Interpret the 12 bytes as a single 96-bit integer (big-endian)
+    full = int.from_bytes(b, byteorder='big')
+
+    # Extract bit fields
+    seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
+    nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
+
+    return seconds + nanoseconds * 1e-9
+
+# def parsePtpTimestamp(b):
+#     seconds = int.from_bytes(b[:6], byteorder='big')
+#     fractional = int.from_bytes(b[6:], byteorder='big') / (1 << 48)
+#     return seconds + fractional
