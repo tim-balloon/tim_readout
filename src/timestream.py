@@ -124,7 +124,9 @@ def parsePtpTimestamp(b: bytes, offset=0) -> float:
 
     # Extract bit fields
     seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
-    nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
+    # nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
+    nanoseconds = (full >> 16) & 0xFFFFFFFF
+    
 
     return seconds + nanoseconds * 1e-9 + offset
 
