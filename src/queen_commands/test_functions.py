@@ -13,7 +13,7 @@ import queen
 import alcove
 import alcove_commands.alcove_base as alcove_base
 import queen_commands.control_io as io
-import timestream
+from timestream import TimeStream, parsePtpTimestamp
 
 
 
@@ -51,7 +51,7 @@ def _captureTimestream(N_packets):
     ip = "192.168.3.40" # TODO: get from cfg
     port = 4096
 
-    timestream = timestream.TimeStream(host=ip, port=port)
+    timestream = TimeStream(host=ip, port=port)
 
     # capture an N packets timestream
     timestream.capturePackets(N_packets) 
@@ -80,7 +80,7 @@ def _captureTimestream(N_packets):
     # slice out ptp timestamps tod
     ptp_timestamps = np.array([
         # parsePtpTimestamp(p)
-        timestream.parsePtpTimestamp(p)
+        parsePtpTimestamp(p)
         for p in timestream.packetsHH('ptp timestamp')
     ])
 
