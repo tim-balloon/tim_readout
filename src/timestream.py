@@ -112,20 +112,25 @@ class TimeStream:
 
 # ============================================================================ #
 # parsePtpTimestamp
-def parsePtpTimestamp(b: bytes, offset=0) -> float:
-    """Parse a 12-byte PTP timestamp into a float timestamp (seconds + nanoseconds).
-    """
+def parsePtpTimestamp(b, offset=0):
+    seconds = int.from_bytes(b[:6], byteorder='big')
+    nanoseconds = int.from_bytes(b[6:10], byteorder='big')
+    return seconds + nanoseconds*1e-9 + offset
 
-    if len(b) != 12:
-        raise ValueError("Input must be exactly 12 bytes.")
+# def parsePtpTimestamp(b: bytes, offset=0) -> float:
+#     """Parse a 12-byte PTP timestamp into a float timestamp (seconds + nanoseconds).
+#     """
 
-    # Interpret the 12 bytes as a single 96-bit integer (big-endian)
-    full = int.from_bytes(b, byteorder='big')
+#     if len(b) != 12:
+#         raise ValueError("Input must be exactly 12 bytes.")
 
-    # Extract bit fields
-    seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
-    # nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
-    nanoseconds = (full >> 16) & 0xFFFFFFFF
+#     # Interpret the 12 bytes as a single 96-bit integer (big-endian)
+#     full = int.from_bytes(b, byteorder='big')
+
+#     # Extract bit fields
+#     seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
+#     # nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
+#     nanoseconds = (full >> 16) & 0xFFFFFFFF
     
 
     return seconds + nanoseconds * 1e-9 + offset
