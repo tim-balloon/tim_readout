@@ -112,7 +112,7 @@ class TimeStream:
 
 # ============================================================================ #
 # parsePtpTimestamp
-def parsePtpTimestamp(b: bytes) -> float:
+def parsePtpTimestamp(b: bytes, offset=0) -> float:
     """Parse a 12-byte PTP timestamp into a float timestamp (seconds + nanoseconds).
     """
 
@@ -126,7 +126,7 @@ def parsePtpTimestamp(b: bytes) -> float:
     seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
     nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
 
-    return seconds + nanoseconds * 1e-9
+    return seconds + nanoseconds * 1e-9 + offset
 
 # def parsePtpTimestamp(b):
 #     seconds = int.from_bytes(b[:6], byteorder='big')
