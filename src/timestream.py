@@ -114,9 +114,11 @@ class TimeStream:
 
 def parsePtpTimestamp(b, offset=0):
 
-    d = [b[0:4], b[5:8], b[9:12]]
+    d = np.array([b[:4], b[4:8], b[8:]])
 
-    return int((d[-3] << 18) | (d[-2] >> 14)) + int((((d[-2] & 0x00003FFF) << 16) | (d[-1] >> 16))) * 1e-9 + offset
+    timestamp = int((d[-3] << 18) | (d[-2] >> 14)) + int((((d[-2] & 0x00003FFF) << 16) | (d[-1] >> 16))) * 1e-9 + offset
+
+    return timestamp
 
 
 # def parsePtpTimestamp(b, offset=0):
