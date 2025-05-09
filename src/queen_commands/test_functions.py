@@ -107,13 +107,13 @@ def loopbackCapture():
 
     # _sendCom(bid, drid, "setNCLO", 600)        # set LO
     # _sendComAll("writeNewVnaComb")     # gen. tone comb
-    # _sendComAll("timestreamOn", 1)     # start streaming
+    _sendComAll("timestreamOn", 1)     # start streaming
 
     start = time.time()
     packets = _captureTimestream(N_packets)    # capture tods
     print(f"Elapsed time: {time.time() - start:.6f} seconds")
 
-    # _sendCom(bid, drid, "timestreamOn", 0)     # stop streaming
+    _sendComAll("timestreamOn", 0)     # stop streaming
 
     II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = packets
 
