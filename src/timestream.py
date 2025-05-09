@@ -114,7 +114,7 @@ class TimeStream:
 # parsePtpTimestamp
 def parsePtpTimestamp(b, offset=0):
     seconds = int.from_bytes(b[:6], byteorder='big')
-    nanoseconds = int.from_bytes(b[6:10], byteorder='big')
+    nanoseconds = int.from_bytes(b[6:], byteorder='big')
     return seconds + nanoseconds*1e-9 + offset
 
 # def parsePtpTimestamp(b: bytes, offset=0) -> float:
