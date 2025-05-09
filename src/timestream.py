@@ -133,7 +133,7 @@ def parsePtpTimestamp(b, offset=0):
 #     nanoseconds = (full >> 16) & 0xFFFFFFFF
     
 
-    return seconds + nanoseconds * 1e-9 + offset
+    # return seconds + nanoseconds * 1e-9 + offset
 
 # def parsePtpTimestamp(b):
 #     seconds = int.from_bytes(b[:6], byteorder='big')
