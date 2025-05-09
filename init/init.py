@@ -28,15 +28,14 @@ from config import board as cfg_b
 
 try:
 
-
-
-
     # ======================================================================== #
     # Firmware, PTP, clocks
     # ======================================================================== #
 
     # assuming cfg.firmware_file is a local filename
     firmware_file = os.path.join(cfg_b.dir_root, cfg_b.firmware_file)
+    firmware_fname = os.path.splitext(os.path.basename(firmware_file))[0]
+    firmware_V = int(firmware_fname[7:9]) # fragile!
     firmware = Overlay(firmware_file, ignore_version=True)
 
     clksrc = 409.6 # MHz
@@ -64,8 +63,8 @@ try:
     rf_data_conv = firmware.usp_rf_data_converter_0
 
     # chan: [adc tiles, adc blocks, dac tiles, dac blocks]
-    name = os.path.splitext(os.path.basename(firmware_file))[0]
-    if int(name[7:9]) >= 13:
+    
+    if firmware_V >= 13:
         tb_indices = {
             1: [1,0,1,3], 2: [1,1,1,2], 3: [0,1,1,0], 4: [0,0,1,1]}
     else:
@@ -80,6 +79,25 @@ try:
         dac.MixerSettings['Freq'] = lofreq
         adc.UpdateEvent(xrfdc.EVENT_MIXER)
         dac.UpdateEvent(xrfdc.EVENT_MIXER)
+
+
+
+
+    # ======================================================================== #
+    # Chains
+    # ======================================================================== #
+
+    # set the ADC accumulation length
+    firmware.chan1.dsp_regs_0.write(0x08, cfg_b.accum_len)
+    firmware.chan2.dsp_regs_0.write(0x08, cfg_b.accum_len)
+    firmware.chan3.dsp_regs_0.write(0x08, cfg_b.accum_len)
+    firmware.chan4.dsp_regs_0.write(0x08, cfg_b.accum_len)
+
+    if firmware_V >= 14:
+        # set chain timing gaps
+        firmware.receive_timing_gpio1.write(0x00, 131072-4)
+        firmware.receive_timing_gpio1.write(0x08, 131072-4)
+        firmware.receive_timing_gpio2.write(0x00, 131072-4)
 
 
 
@@ -107,18 +125,6 @@ try:
     ethRegsPortWrite(firmware.ethWrapPort1, src_ip_2)
     ethRegsPortWrite(firmware.ethWrapPort2, src_ip_3)
     ethRegsPortWrite(firmware.ethWrapPort3, src_ip_4)
-
-
-
-
-    # ======================================================================== #
-    # Chains / Packets
-    # ======================================================================== #
-
-    # set packet timing gaps
-    firmware.receive_timing_gpio1.write(0x00, 131072-4)
-    firmware.receive_timing_gpio1.write(0x08, 131072-4)
-    firmware.receive_timing_gpio2.write(0x00, 131072-4)
 
 
 
