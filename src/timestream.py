@@ -109,19 +109,21 @@ class TimeStream:
 
 
 
+
 # ============================================================================ #
 # parsePtpTimestamp
-
 def parsePtpTimestamp(b, offset=0):
+    """Parses a PTP timestamp from a 12-byte string.
 
-    # d0 = int.from_bytes(b[0:4], byteorder='big')
-    # d1 = int.from_bytes(b[4:8], byteorder='big')
-    # d2 = int.from_bytes(b[8:12], byteorder='big')
-    # d = np.array([d0, d1, d2])
+    Args:
+        b (bytes): The (12-byte) byte string containing the PTP timestamp
+            from an RFSoC detector timestream packet.
+        offset (float, optional): An offset to add to the resulting timestamp,
+            in seconds. Defaults to 0. 37 to convert from TAI time to UTC.
 
-    # d = np.array([
-    #     int.from_bytes(b[i:i+4], byteorder='big') 
-    #     for i in range(0, 12, 4)])
+    Returns:
+        float: The PTP timestamp as a floating-point number representing seconds.
+    """
 
     d = np.frombuffer(b, dtype='>u4') 
 
@@ -129,48 +131,3 @@ def parsePtpTimestamp(b, offset=0):
     nanoseconds = int((((d[-2] & 0x00003FFF) << 16) | (d[-1] >> 16)))
 
     return seconds + nanoseconds*1e-9 + offset
-
-
-# def parsePtpTimestamp(b, offset=0):
-#     seconds = int.from_bytes(b[:6], byteorder='big')
-#     nanoseconds = int.from_bytes(b[6:10], byteorder='big')
-#     return seconds + nanoseconds*1e-9 + offset
-
-
-# def parsePtpTimestamp(b: bytes, offset=0) -> float:
-#     """Parse a 12-byte PTP timestamp into a float timestamp (seconds + nanoseconds).
-#     """
-
-#     if len(b) != 12:
-#         raise ValueError("Input must be exactly 12 bytes.")
-
-#     # Interpret the 12 bytes as a single 96-bit integer (big-endian)
-#     full = int.from_bytes(b, byteorder='big')
-
-#     # Extract bit fields
-#     seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
-#     # nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
-#     nanoseconds = (full >> 16) & 0xFFFFFFFF
-    
-#     return seconds + nanoseconds * 1e-9 + offset
-
-
-# def parsePtpTimestamp(b):
-#     seconds = int.from_bytes(b[:6], byteorder='big')
-#     fractional = int.from_bytes(b[6:], byteorder='big') / (1 << 48)
-#     return seconds + fractional
-
-
-# def parsePtpTimestamp(b, offset=0):
-#     d0 = int.from_bytes(b[0:4], byteorder='big')
-#     d1 = int.from_bytes(b[4:8], byteorder='big')
-#     d2 = int.from_bytes(b[8:12], byteorder='big')
-#     d = np.array([d0, d1, d2])
-#     timestamp = int((d[-3] << 18) | (d[-2] >> 14)) + int((((d[-2] & 0x00003FFF) << 16) | (d[-1] >> 16))) * 1e-9 + offset
-#     return timestamp
-
-# def parsePtpTimestamp(b: bytes, offset=0) -> float:
-#     full = int.from_bytes(b, byteorder='big')
-#     seconds = (full >> 48) & ((1 << 48) - 1)           # top 48 bits
-#     nanoseconds = (full >> 16) & 0x3FFFFFFF            # next 30 bits
-#     return seconds + nanoseconds * 1e-9 + offset

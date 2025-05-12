@@ -100,9 +100,13 @@ def loopbackCapture():
 
     print("Running loopback capture...")
 
-    bid = 1
-    drid = 1
-    N_packets = 4096*4 # 4096 samples ~ 8.4 s
+    # bid = 1
+    # drid = 1
+
+    packet_per_second = 512e6/2^20
+    t_obs = 60*60 # 1 hour
+    N_packets = packet_per_second*t_obs
+    # N_packets = 4096*4 # 4096 samples ~ 8.4 s
     # N_packets = 10
 
     # _sendCom(bid, drid, "setNCLO", 600)        # set LO
