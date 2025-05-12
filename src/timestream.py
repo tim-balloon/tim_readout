@@ -119,11 +119,11 @@ def parsePtpTimestamp(b, offset=0):
     # d2 = int.from_bytes(b[8:12], byteorder='big')
     # d = np.array([d0, d1, d2])
 
-    # d = np.array([
-    #     int.from_bytes(b[i:i+4], byteorder='big') 
-    #     for i in range(0, 12, 4)])
+    d = np.array([
+        int.from_bytes(b[i:i+4], byteorder='big') 
+        for i in range(0, 12, 4)])
 
-    d = np.frombuffer(b, dtype='>u4') 
+    # d = np.frombuffer(b, dtype='>u4') 
 
     seconds = int((d[-3] << 18) | (d[-2] >> 14))
     nanoseconds = int((((d[-2] & 0x00003FFF) << 16) | (d[-1] >> 16)))
