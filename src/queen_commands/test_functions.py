@@ -105,7 +105,7 @@ def loopbackCapture():
 
     packet_per_second = 488 # 512e6/2**20
     # t_obs = 60*60 # 1 hour - too much for memory
-    t_obs = 2*60 # 2 min: ~2 GB
+    t_obs = 60 # 1 min: ~1 GB
     N_packets = 4*packet_per_second*t_obs
     # N_packets = 4096*4 # 4096 samples ~ 8.4 s
     # N_packets = 10
