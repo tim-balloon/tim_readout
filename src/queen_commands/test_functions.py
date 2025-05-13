@@ -164,8 +164,10 @@ def loopbackCaptureLong():
     ptp_timestamps = np.array([])
     packet_ips     = np.array([])
     i_packet = 0
+    print("do")
     while i_packet < N_packets:
-        print("do")
+        print("do1")
+        print("do2", flush=True)
         print(f"\t{i_packet}/{N_packets}", end='\r', flush=True)
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
         packets = _captureTimestream(num_packets_this_loop)
