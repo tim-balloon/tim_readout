@@ -144,7 +144,7 @@ def progressBar(i, N, S=10, msg=""):
 
     s = int((i/N)*S) 
     bar = f"[{'▮'*s}{'_'*(S-s)}]"
-    end = '\r' if i<N else ''
+    end = '\r' if i<N else '\n'
     print(f"{msg} {bar} ({i}/{N})", end=end)
     if i==N: # done
         print()
