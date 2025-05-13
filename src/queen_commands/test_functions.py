@@ -165,6 +165,7 @@ def loopbackCaptureLong():
     packet_ips     = np.array([])
     i_packet = 0
     while i_packet < N_packets:
+        print(f"\t{i_packet}/{N_packets}", end='\r')
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
         packets = _captureTimestream(num_packets_this_loop)
         _,_, cnts, tss, _,_, ips = packets
