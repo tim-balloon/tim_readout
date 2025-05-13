@@ -138,7 +138,7 @@ def loopbackCapture():
                          use_timestamp=True)
 
 
-def progressBar(i, N, S=10, msg=""):
+def progressBar(i, N, msg="", S=10):
     """Progress bar.
     """
 
