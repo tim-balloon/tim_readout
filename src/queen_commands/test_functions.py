@@ -149,14 +149,14 @@ def loopbackCaptureLong():
     # t_obs = 60*60 # s; 1 hr
     t_obs = 60*3 # s
 
-    print(f"Running long loopback capture ({t_obs} s)...")
-
     sample_rate = 488 # 512e6/2**20
     num_drones = 4
     t_obs_per_loop = 60 # ~1 GB in memory
     packets_per_s = sample_rate*num_drones
     N_packets = packets_per_s*t_obs
     max_packets_per_loop = packets_per_s*t_obs_per_loop
+
+    msg = f"Running long loopback capture ({t_obs} s; {N_packets} packets):"
 
     _sendComAll("timestreamOn", 1)     # start streaming
     start = time.time()
@@ -165,15 +165,23 @@ def loopbackCaptureLong():
     ptp_timestamps = np.array([])
     packet_ips     = np.array([])
     i_packet = 0
+    S = 10
+    print(f"{msg} [{'_'*S}] ({i_packet}/{N_packets})", end='\r')
     while i_packet < N_packets:
-        print(f"\t{i_packet}/{N_packets}", end='\r')
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
+
         packets = _captureTimestream(num_packets_this_loop)
         _,_, cnts, tss, _,_, ips = packets
         np.concatenate((packet_counts, cnts))
         np.concatenate((ptp_timestamps, tss))
         np.concatenate((packet_ips, ips))
+        
         i_packet += num_packets_this_loop
+
+        # progress
+        s = int((i_packet/N_packets)*S) 
+        progress = f"[{'▮'*s}{'_'*(S-s)}]"
+        print(f"{msg} {progress} ({i_packet}/{N_packets})", end='\r')
 
     print(f"Elapsed time: {time.time() - start:.6f} seconds")
     _sendComAll("timestreamOn", 0)     # stop streaming
@@ -185,6 +193,17 @@ def loopbackCaptureLong():
     fname = io.saveToTmp(ptp_timestamps, filename=f'loopback_ptp_timestamps_',
                          use_timestamp=True)
  
+
+
+
+    status = f"[{'_'*S}]"
+    print(f"{msg} {status} ({i_packet}/{N_packets})", end='\r')
+    while i_packet < N_packets:
+        i_packet += 1
+        s = int((i_packet/N_packets)*S)
+        status = f"[{'▮'*s}{'_'*(S-s)}]"
+        time.sleep(2)
+        print(f"{msg} {status} ({i_packet}/{N_packets})", end='\r')
 
 
 '''
