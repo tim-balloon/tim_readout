@@ -172,7 +172,7 @@ def loopbackCaptureLong():
         _,_, cnts, tss, _,_, ips = packets
         np.concatenate((packet_counts, cnts))
         np.concatenate((ptp_timestamps, tss))
-        np.concatenate((packet_ips, packets))
+        np.concatenate((packet_ips, ips))
         i_packet += num_packets_this_loop
 
     print(f"Elapsed time: {time.time() - start:.6f} seconds")
