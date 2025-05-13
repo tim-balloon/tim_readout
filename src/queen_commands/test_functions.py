@@ -138,6 +138,17 @@ def loopbackCapture():
                          use_timestamp=True)
 
 
+def progressBar(i, N, S=10, msg=""):
+    """Progress bar.
+    """
+
+    s = int((i/N)*S) 
+    bar = f"[{'▮'*s}{'_'*(S-s)}]"
+    end = '\r' if i<N else ''
+    print(f"{msg} {bar} ({i}/{N})", end=end)
+    if i==N: # done
+        print()
+
 # ============================================================================ #
 # loopbackCaptureLong
 def loopbackCaptureLong():
@@ -146,9 +157,8 @@ def loopbackCaptureLong():
     E.g. run setNCLO and writeNewVnaComb (for all drones) first.
     """
 
-    # t_obs = 60*60 # s; 1 hr
-    t_obs = 60*3 # s
-
+    t_obs = 60*60 # s; 1 hr
+    # t_obs = 60*3 # s
     sample_rate = 488 # 512e6/2**20
     num_drones = 4
     t_obs_per_loop = 60 # ~1 GB in memory
@@ -165,8 +175,7 @@ def loopbackCaptureLong():
     ptp_timestamps = np.array([])
     packet_ips     = np.array([])
     i_packet = 0
-    S = 10
-    print(f"{msg} [{'_'*S}] ({i_packet}/{N_packets})", end='\r')
+    progressBar(i_packet, N_packets, msg)
     while i_packet < N_packets:
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
 
@@ -175,13 +184,10 @@ def loopbackCaptureLong():
         np.concatenate((packet_counts, cnts))
         np.concatenate((ptp_timestamps, tss))
         np.concatenate((packet_ips, ips))
-        
+
         i_packet += num_packets_this_loop
 
-        # progress
-        s = int((i_packet/N_packets)*S) 
-        progress = f"[{'▮'*s}{'_'*(S-s)}]"
-        print(f"{msg} {progress} ({i_packet}/{N_packets})", end='\r')
+        progressBar(i_packet, N_packets, msg)
 
     print(f"Elapsed time: {time.time() - start:.6f} seconds")
     _sendComAll("timestreamOn", 0)     # stop streaming
