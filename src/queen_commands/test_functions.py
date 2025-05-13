@@ -85,7 +85,7 @@ def _captureTimestream(N_packets, timestream=None):
         for p in timestream.packetsHH('ptp timestamp')
     ])
 
-    return II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips
+    return timestream, II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips
 
 
 # ============================================================================ #
@@ -133,7 +133,7 @@ def loopbackCapture():
 
     _sendComAll("timestreamOn", 0)     # stop streaming
 
-    II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = packets
+    timestream, II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = packets
 
     fname = io.saveToTmp(packet_ips, filename=f'loopback_packet_ips_', 
                          use_timestamp=True)
@@ -178,12 +178,13 @@ def loopbackCaptureLong():
     ptp_timestamps = []
     packet_ips     = []
     i_packet = 0
+    timestream = None
     _progressBar(i_packet, N_packets, msg)
     while i_packet < N_packets:
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
 
-        packets = _captureTimestream(num_packets_this_loop)
-        _,_, cnts, tss, _,_, ips = packets
+        packets = _captureTimestream(num_packets_this_loop, timestream)
+        timestream, _,_, cnts, tss, _,_, ips = packets
         packet_counts.extend(cnts)
         ptp_timestamps.extend(tss)
         packet_ips.extend(ips)
