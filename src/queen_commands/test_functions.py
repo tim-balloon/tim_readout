@@ -87,6 +87,18 @@ def _captureTimestream(N_packets):
     return II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips
 
 
+# ============================================================================ #
+# _progressBar
+def _progressBar(i, N, msg="", S=10):
+    """Progress bar.
+    """
+
+    s = int((i/N)*S) 
+    bar = f"[{'▮'*s}{'_'*(S-s)}]"
+    end = '\r' if i<N else '\n'
+    print(f"{msg} {bar} ({i}/{N})", end=end)
+
+
 
 
 # ============================================================================ #
@@ -138,17 +150,6 @@ def loopbackCapture():
                          use_timestamp=True)
 
 
-def progressBar(i, N, msg="", S=10):
-    """Progress bar.
-    """
-
-    s = int((i/N)*S) 
-    bar = f"[{'▮'*s}{'_'*(S-s)}]"
-    end = '\r' if i<N else '\n'
-    print(f"{msg} {bar} ({i}/{N})", end=end)
-    if i==N: # done
-        print()
-
 # ============================================================================ #
 # loopbackCaptureLong
 def loopbackCaptureLong():
@@ -157,8 +158,9 @@ def loopbackCaptureLong():
     E.g. run setNCLO and writeNewVnaComb (for all drones) first.
     """
 
-    t_obs = 60*60 # s; 1 hr
     # t_obs = 60*3 # s
+    t_obs = 60*30 # s; 0.5 hr
+    # crashing over 30 minutes
     sample_rate = 488 # 512e6/2**20
     num_drones = 4
     t_obs_per_loop = 60 # ~1 GB in memory
@@ -175,7 +177,7 @@ def loopbackCaptureLong():
     ptp_timestamps = np.array([])
     packet_ips     = np.array([])
     i_packet = 0
-    progressBar(i_packet, N_packets, msg)
+    _progressBar(i_packet, N_packets, msg)
     while i_packet < N_packets:
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
 
@@ -187,7 +189,7 @@ def loopbackCaptureLong():
 
         i_packet += num_packets_this_loop
 
-        progressBar(i_packet, N_packets, msg)
+        _progressBar(i_packet, N_packets, msg)
 
     print(f"Elapsed time: {time.time() - start:.6f} seconds")
     _sendComAll("timestreamOn", 0)     # stop streaming
@@ -198,18 +200,13 @@ def loopbackCaptureLong():
                          use_timestamp=True)
     fname = io.saveToTmp(ptp_timestamps, filename=f'loopback_ptp_timestamps_',
                          use_timestamp=True)
+    
+
+# I and Q too much to hold in memory for longtimestreams
+# could save as binary instead, and append each loop
+# then convert to array using np.memmap
  
 
-
-
-    status = f"[{'_'*S}]"
-    print(f"{msg} {status} ({i_packet}/{N_packets})", end='\r')
-    while i_packet < N_packets:
-        i_packet += 1
-        s = int((i_packet/N_packets)*S)
-        status = f"[{'▮'*s}{'_'*(S-s)}]"
-        time.sleep(2)
-        print(f"{msg} {status} ({i_packet}/{N_packets})", end='\r')
 
 
 '''
