@@ -136,6 +136,52 @@ def loopbackCapture():
                          use_timestamp=True)
     fname = io.saveToTmp(ptp_timestamps, filename=f'loopback_ptp_timestamps_',
                          use_timestamp=True)
+
+
+# ============================================================================ #
+# loopbackCaptureLong
+def loopbackCaptureLong():
+    """Capture some aspects of a longer timestream.
+    Make sure NCLO is set and a waveform being generated on all chans.
+    E.g. run setNCLO and writeNewVnaComb (for all drones) first.
+    """
+
+    t_obs = 60*60 # s; 1 hr
+
+    print(f"Running long loopback capture ({t_obs} s)...")
+
+    sample_rate = 488 # 512e6/2**20
+    num_drones = 4
+    t_obs_per_loop = 60 # ~1 GB in memory
+    packets_per_s = sample_rate*num_drones
+    N_packets = packets_per_s*t_obs
+    max_packets_per_loop = packets_per_s*t_obs_per_loop
+
+    _sendComAll("timestreamOn", 1)     # start streaming
+    start = time.time()
+
+    packet_counts  = np.array([])
+    ptp_timestamps = np.array([])
+    packet_ips     = np.array([])
+    i_packet = 0
+    while i_packet < N_packets:
+        num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
+        packets = _captureTimestream(num_packets_this_loop)
+        _,_, cnts, tss, _,_, ips = packets
+        np.concatenate((packet_counts, cnts))
+        np.concatenate((ptp_timestamps, tss))
+        np.concatenate((packet_ips, packets))
+        i_packet += num_packets_this_loop
+
+    print(f"Elapsed time: {time.time() - start:.6f} seconds")
+    _sendComAll("timestreamOn", 0)     # stop streaming
+
+    fname = io.saveToTmp(packet_ips, filename=f'loopback_packet_ips_', 
+                         use_timestamp=True)
+    fname = io.saveToTmp(packet_counts, filename=f'loopback_packet_counts_', 
+                         use_timestamp=True)
+    fname = io.saveToTmp(ptp_timestamps, filename=f'loopback_ptp_timestamps_',
+                         use_timestamp=True)
  
 
 
