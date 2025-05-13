@@ -173,9 +173,9 @@ def loopbackCaptureLong():
     _sendComAll("timestreamOn", 1)     # start streaming
     start = time.time()
 
-    packet_counts  = np.array([])
-    ptp_timestamps = np.array([])
-    packet_ips     = np.array([])
+    packet_counts  = []
+    ptp_timestamps = []
+    packet_ips     = []
     i_packet = 0
     _progressBar(i_packet, N_packets, msg)
     while i_packet < N_packets:
@@ -183,9 +183,9 @@ def loopbackCaptureLong():
 
         packets = _captureTimestream(num_packets_this_loop)
         _,_, cnts, tss, _,_, ips = packets
-        packet_counts = np.concatenate((packet_counts, cnts))
-        ptp_timestamps = np.concatenate((ptp_timestamps, tss))
-        packet_ips = np.concatenate((packet_ips, ips))
+        packet_counts.extend(cnts)
+        ptp_timestamps.extend(tss)
+        packet_ips.extend(ips)
 
         i_packet += num_packets_this_loop
 
@@ -193,6 +193,10 @@ def loopbackCaptureLong():
 
     print(f"Elapsed time: {time.time() - start:.6f} seconds")
     _sendComAll("timestreamOn", 0)     # stop streaming
+
+    packet_counts  = np.array(packet_counts)
+    ptp_timestamps = np.array(ptp_timestamps)
+    packet_ips     = np.array(packet_ips)
 
     fname = io.saveToTmp(packet_ips, filename=f'loopback_packet_ips_', 
                          use_timestamp=True)
