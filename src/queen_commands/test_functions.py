@@ -183,9 +183,9 @@ def loopbackCaptureLong():
 
         packets = _captureTimestream(num_packets_this_loop)
         _,_, cnts, tss, _,_, ips = packets
-        np.concatenate((packet_counts, cnts))
-        np.concatenate((ptp_timestamps, tss))
-        np.concatenate((packet_ips, ips))
+        packet_counts = np.concatenate((packet_counts, cnts))
+        ptp_timestamps = np.concatenate((ptp_timestamps, tss))
+        packet_ips = np.concatenate((packet_ips, ips))
 
         i_packet += num_packets_this_loop
 
