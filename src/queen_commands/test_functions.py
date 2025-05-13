@@ -42,16 +42,17 @@ def _sendComAll(com_str, args_str=None):
 
 # ============================================================================ #
 # _captureTimestream
-def _captureTimestream(N_packets):
+def _captureTimestream(N_packets, timestream=None):
     """
     fs = 512e6/(1024*1024) # 488.28125 Hz
     e.g. N_packets=1000 is 2.048 s timestream
     """
 
-    ip = "192.168.3.40" # TODO: get from cfg
-    port = 4096
+    if not timestream:
+        ip = "192.168.3.40" # TODO: get from cfg
+        port = 4096
 
-    timestream = TimeStream(host=ip, port=port)
+        timestream = TimeStream(host=ip, port=port)
 
     # capture an N packets timestream
     timestream.capturePackets(N_packets) 
