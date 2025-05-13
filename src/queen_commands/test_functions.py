@@ -146,7 +146,8 @@ def loopbackCaptureLong():
     E.g. run setNCLO and writeNewVnaComb (for all drones) first.
     """
 
-    t_obs = 60*60 # s; 1 hr
+    # t_obs = 60*60 # s; 1 hr
+    t_obs = 60*3 # s
 
     print(f"Running long loopback capture ({t_obs} s)...")
 
