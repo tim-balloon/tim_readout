@@ -159,17 +159,19 @@ def loopbackCaptureLong():
     E.g. run setNCLO and writeNewVnaComb (for all drones) first.
     """
 
-    # t_obs = 60*3 # s
-    t_obs = 60*30 # s; 0.5 hr
-    # crashing over 30 minutes
+    t_obs = 60*30 # s; ~0.4 MB/s memory usage    
+    t_obs_per_loop = 15 # s; ~100 MB/s memory usage
+    # t_obs=1800, t_obs_per_loop=15 -> ~2 GB memory, ~25%
+
     sample_rate = 488 # 512e6/2**20
     num_drones = 4
-    t_obs_per_loop = 15 # 15 s is ~1.5 GB in memory
     packets_per_s = sample_rate*num_drones
     N_packets = packets_per_s*t_obs
     max_packets_per_loop = packets_per_s*t_obs_per_loop
 
     msg = f"Running long loopback capture ({t_obs} s; {N_packets} packets):"
+
+    _sendComAll("writeNewVnaComb")     # gen. tone comb
 
     _sendComAll("timestreamOn", 1)     # start streaming
     start = time.time()
