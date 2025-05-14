@@ -183,11 +183,12 @@ def loopbackCaptureLong():
     while i_packet < N_packets:
         num_packets_this_loop = min(N_packets - i_packet, max_packets_per_loop)
 
-        packets = _captureTimestream(num_packets_this_loop, timestream)
-        timestream, _,_, cnts, tss, _,_, ips = packets
-        packet_counts.extend(cnts)
-        ptp_timestamps.extend(tss)
-        packet_ips.extend(ips)
+        _captureTimestream(num_packets_this_loop, timestream)
+        # packets = _captureTimestream(num_packets_this_loop, timestream)
+        # timestream, _,_, cnts, tss, _,_, ips = packets
+        # packet_counts.extend(cnts)
+        # ptp_timestamps.extend(tss)
+        # packet_ips.extend(ips)
 
         i_packet += num_packets_this_loop
 
