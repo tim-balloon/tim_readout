@@ -408,54 +408,48 @@ def getNCLO(chan=None):
 # ============================================================================ #
 # _setNCLO2
 def _setNCLO2(chan, lofreq):
-    import numpy as np
-    mix = cfg_b.firmware.mix_freq_set_0
-    if chan == 1:
-        offset = 0
-    elif chan == 2:
-        offset = 4
-    elif chan == 3:
-        offset = 8
-    elif chan == 4:
-        offset = 12
-    else:
-        return "Does not compute"
-    # set fabric nclo frequency 
-    # only for small frequency sweeps
-    # 0x00 -  frequency[21 downto 0] 
-    def nclo_num(freqMHz):
-        # freq in MHz
-        # returns 32 bit signed integer for setting nclo2
-        # MHz_per_int = 512.0/2**22 #MHz per_step !check with spec-analyzer
-        MHz_per_int = cfg_b.wf_fs/1e6/2**22
-        digi_val = int(np.round(freqMHz/MHz_per_int))
-        actual_freq = digi_val*MHz_per_int
-        return digi_val, actual_freq
+    """Sets the fine NCLO frequency for a specified channel for sweeps.
 
-    digi_val, actual_freq = nclo_num(lofreq)
-    mix.write(offset, digi_val) # frequency
-    return
+    chan: The channel number (1 to 4) to configure.
+    lofreq: The desired local oscillator frequency in MHz.
+    """
+
+    import numpy as np
+    
+    try:
+        MHz_per_int = cfg_b.wf_fs/1e6/2**22
+        digi_val = int(np.round(lofreq/MHz_per_int))
+        # actual_freq = digi_val*MHz_per_int
+
+        cfg_b.firmware.mix_freq_set_0.write(4*(chan - 1), digi_val)
+
+    except Exception as e:
+        print(f"_setNCLO2 Error: {e}")
+
 
 # ============================================================================ #
 # _setAtten
-def _setAtten(chan,direction,attenuation):
+def _setAtten(chan, direction, attenuation):
+    """Sets the attenuation for a specified channel and direction.
+
+    chan: The channel number (1-4) to configure.
+    direction: The direction ('drive' or 'sense').
+    attenuation: The desired attenuation level in dB (float).
+    """
 
     from alcove_commands.transceiver_serialdriver import Transceiver
-    
-    #casting 
-    chan = int(chan)
-    attenuation = float(attenuation)
 
-    atten = Transceiver("/dev/ttyACM0")
-    if direction=="drive":
-        d = 0 
-    elif direction=="sense":
-        d = 4
-    else:
-        print("Error: unrecognized direction string, needs to be drive or sense")
-    atten_id = (chan-1) + d
-    print(atten_id)
-    atten.set_atten(atten_id, attenuation)
+    try:
+        chan = int(chan)
+        attenuation = float(attenuation)
+
+        atten_id = (chan - 1) + {'drive':0, 'sense':4}[direction]
+
+        Transceiver("/dev/ttyACM0").set_atten(atten_id, attenuation)
+
+    except Exception as e:
+        print(f"_setAtten Error: {e}")
+
 
 # ============================================================================ #
 # setFineNCLO 
