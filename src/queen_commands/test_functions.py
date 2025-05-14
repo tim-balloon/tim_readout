@@ -57,35 +57,35 @@ def _captureTimestream(N_packets, timestream=None):
     # capture an N packets timestream
     timestream.capturePackets(N_packets) 
 
-    # # get the sender IPs
-    # packet_ips = timestream.packetsIP()
+    # get the sender IPs
+    packet_ips = timestream.packetsIP()
 
-    # # slice out II and QQ tods (1024 channel I and Q arrays)    
-    # II, QQ = timestream.packetsIIQQ()
+    # slice out II and QQ tods (1024 channel I and Q arrays)    
+    II, QQ = timestream.packetsIIQQ()
 
-    # # slice out packet info and convert from bytes
-    # packet_infos = np.array([
-    #     int.from_bytes(p, byteorder='big')
-    #     for p in timestream.packetsHH('packet info')]) 
+    # slice out packet info and convert from bytes
+    packet_infos = np.array([
+        int.from_bytes(p, byteorder='big')
+        for p in timestream.packetsHH('packet info')]) 
     
-    # # slice out channel count and convert from bytes
-    # channel_counts = np.array([
-    #     int.from_bytes(p, byteorder='big')
-    #     for p in timestream.packetsHH('channel count')]) 
+    # slice out channel count and convert from bytes
+    channel_counts = np.array([
+        int.from_bytes(p, byteorder='big')
+        for p in timestream.packetsHH('channel count')]) 
 
-    # # slice out packet count tod and convert from bytes
-    # packet_counts = np.array([
-    #     int.from_bytes(p, byteorder='big')
-    #     for p in timestream.packetsHH('packet count')])    
+    # slice out packet count tod and convert from bytes
+    packet_counts = np.array([
+        int.from_bytes(p, byteorder='big')
+        for p in timestream.packetsHH('packet count')])    
     
-    # # slice out ptp timestamps tod
-    # ptp_timestamps = np.array([
-    #     # parsePtpTimestamp(p)
-    #     parsePtpTimestamp(p)
-    #     for p in timestream.packetsHH('ptp timestamp')
-    # ])
+    # slice out ptp timestamps tod
+    ptp_timestamps = np.array([
+        # parsePtpTimestamp(p)
+        parsePtpTimestamp(p)
+        for p in timestream.packetsHH('ptp timestamp')
+    ])
 
-    II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = None, None, None, None, None, None, None
+    # II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips = None, None, None, None, None, None, None
 
     return timestream, II, QQ, packet_counts, ptp_timestamps, packet_infos, channel_counts, packet_ips
 
@@ -166,8 +166,7 @@ def loopbackCaptureLong():
     # crashing over 30 minutes
     sample_rate = 488 # 512e6/2**20
     num_drones = 4
-    # t_obs_per_loop = 60 # ~1 GB in memory
-    t_obs_per_loop = 15
+    t_obs_per_loop = 15 # 15 s is ~1 GB in memory
     packets_per_s = sample_rate*num_drones
     N_packets = packets_per_s*t_obs
     max_packets_per_loop = packets_per_s*t_obs_per_loop
