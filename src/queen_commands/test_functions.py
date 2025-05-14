@@ -167,7 +167,7 @@ def loopbackCaptureLong():
     sample_rate = 488 # 512e6/2**20
     num_drones = 4
     # t_obs_per_loop = 60 # ~1 GB in memory
-    t_obs_per_loop = 5
+    t_obs_per_loop = 15
     packets_per_s = sample_rate*num_drones
     N_packets = packets_per_s*t_obs
     max_packets_per_loop = packets_per_s*t_obs_per_loop
