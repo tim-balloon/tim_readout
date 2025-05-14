@@ -229,7 +229,7 @@ def timestreamMonitorTest():
 
     import signal
     def signal_handler(sig, frame):
-        global running
+        nonlocal running
         running = False
     signal.signal(signal.SIGINT, signal_handler)
 
