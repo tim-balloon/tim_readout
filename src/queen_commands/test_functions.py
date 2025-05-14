@@ -171,9 +171,10 @@ def loopbackCaptureLong():
 
     msg = f"Running long loopback capture ({t_obs} s; {N_packets} packets):"
 
-    _sendComAll("writeNewVnaComb")     # gen. tone comb
+    _sendComAll("startChains")
+    _sendComAll("writeNewVnaComb")
 
-    _sendComAll("timestreamOn", 1)     # start streaming
+    _sendComAll("timestreamOn", 1)
     start = time.time()
 
     packet_counts  = []
