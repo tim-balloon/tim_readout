@@ -240,7 +240,7 @@ def timestreamMonitorTest():
             timestream, _,_,_,_,_,_, ips = packets
             ips_unique = np.unique(ips)
 
-            print(ips_unique, end='\r')
+            print(f"{ips_unique}        ", end='\r')
 
     except KeyboardInterrupt:
         running = False
