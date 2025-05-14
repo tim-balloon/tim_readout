@@ -214,7 +214,40 @@ def loopbackCaptureLong():
 # I and Q too much to hold in memory for longtimestreams
 # could save as binary instead, and append each loop
 # then convert to array using np.memmap
+
+
+# ============================================================================ #
+# timestreamMonitorTest
+def timestreamMonitorTest():
+
+    running = True
  
+    _sendComAll("startChains")
+    _sendComAll("writeNewVnaComb")
+
+    _sendComAll("timestreamOn", 1)
+
+    import signal
+    def signal_handler(sig, frame):
+        global running
+        running = False
+    signal.signal(signal.SIGINT, signal_handler)
+
+    try:
+        while running:
+            packets = _captureTimestream(488, timestream)
+            timestream, _,_,_,_,_,_, ips = packets
+            ips_unique = np.unique(ips)
+
+            print(ips_unique, end='\r')
+
+    except KeyboardInterrupt:
+        running = False
+    finally:
+        print()
+
+        _sendComAll("timestreamOn", 0)
+
 
 
 
