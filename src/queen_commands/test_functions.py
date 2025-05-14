@@ -234,6 +234,7 @@ def timestreamMonitorTest():
     signal.signal(signal.SIGINT, signal_handler)
 
     try:
+        timestream = None
         while running:
             packets = _captureTimestream(488, timestream)
             timestream, _,_,_,_,_,_, ips = packets
