@@ -76,9 +76,14 @@ def _resetAccumAndSync(chan, freqs):
     fft_shift    = 2**9-1 if len(freqs)<400 else 2**5-1
 
     dsp_regs.write(0x00, fft_shift)
+    dsp_regs.write(0x08, accum_length)
     dsp_regs.write(0x08, accum_length | sync_in)
-    dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
     dsp_regs.write(0x0c, 180) # 260)
+
+    # dsp_regs.write(0x00, fft_shift)
+    # dsp_regs.write(0x08, accum_length | sync_in)
+    # dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
+    # dsp_regs.write(0x0c, 180) # 260)
 
 
 # ============================================================================ #
