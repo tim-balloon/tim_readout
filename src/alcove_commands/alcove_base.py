@@ -80,15 +80,6 @@ def timestreamOn(on=True):
 
 
 # ============================================================================ #
-# startChains
-def startChains():
-    """Start board receive chains and packetization.
-    """
-
-    cfg_b.firmware.receive_timing_gpio2.write(0x08, 1)
-
-
-# ============================================================================ #
 # userPacketInfo 
 def userPacketInfo(data):
     '''Write 16 bits of data to include in the UDP timestream packet.

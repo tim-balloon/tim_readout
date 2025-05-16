@@ -95,9 +95,13 @@ try:
 
     if firmware_V >= 14:
         # set chain timing gaps
-        firmware.receive_timing_gpio1.write(0x00, 131072-4)
-        firmware.receive_timing_gpio1.write(0x08, 131072-4)
-        firmware.receive_timing_gpio2.write(0x00, 131072-4)
+        accum_start_gap = cfg_b.accum_len//4
+        firmware.receive_timing_gpio1.write(0x00, accum_start_gap - 4)
+        firmware.receive_timing_gpio1.write(0x08, accum_start_gap - 4)
+        firmware.receive_timing_gpio2.write(0x00, accum_start_gap - 4)
+
+        # start chains
+        firmware.receive_timing_gpio2.write(0x08, 1)
 
 
 

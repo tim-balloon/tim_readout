@@ -51,39 +51,27 @@ def setAccumLength():
 # ============================================================================ #
 # _resetAccumAndSync
 def _resetAccumAndSync(chan, freqs):
-    '''
-    Resets the accumulator and synchronizes the DAC.
+    '''Resets the accumulator and synchronizes the DAC.
 
-    This function performs a sequence of writes to the DSP registers to reset 
-    the accumulator, synchronize the DAC, and configure the FFT and DDS shift 
-    values.
-
-    Args:
-        chan: The channel identifier (not used anymore - backwards compatible).
-        freqs (list or numpy.ndarray): A list or array of frequencies, used to determine
-            the FFT shift value.
-
-    Note:
-        - Relies on `cfg_b.firmware`, `cfg_b.drid`, and `cfg_b.accum_len`.
-        - `accum_rst` is active on the rising edge.
+    chan: The channel identifier (not used anymore - backwards compatible).
+    freqs (list or numpy.ndarray): A list or array of frequencies, used to determine the FFT shift value.
     '''
 
     dsp_regs = _firmware_chan(cfg_b.firmware, cfg_b.drid).dsp_regs_0
 
     sync_in      = 2**26
-    accum_rst    = 2**24  # (active rising edge)
+    # accum_rst    = 2**24  # (active rising edge)
     accum_length = cfg_b.accum_len # e.g. 2**19-1
     fft_shift    = 2**9-1 if len(freqs)<400 else 2**5-1
 
     dsp_regs.write(0x00, fft_shift)
+
+    # compatibility with v <= 13
     dsp_regs.write(0x08, accum_length)
     dsp_regs.write(0x08, accum_length | sync_in)
-    dsp_regs.write(0x0c, 180) # 260)
-
-    # dsp_regs.write(0x00, fft_shift)
-    # dsp_regs.write(0x08, accum_length | sync_in)
     # dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
-    # dsp_regs.write(0x0c, 180) # 260)
+
+    dsp_regs.write(0x0c, 180) # 260)
 
 
 # ============================================================================ #
