@@ -56,13 +56,9 @@ def _com():
         35:tones.createCustomCombFilesFromCurrentComb,
         36:alcove_base.modifyCustomCombAmps,
         37:tones.writeTargCombFromCustomList,
-        # 38:tones.setAccumLength,
         40:sweeps.vnaSweep,
-        # 41:sweeps.vnaSweepFull,
         42:sweeps.targetSweep,
-        # 43:sweeps.targetSweepFull,
         44:sweeps.customSweep,
-        # 45:sweeps.loChopSweep,
         50:analysis.findVnaResonators,
         51:analysis.findTargResonators,
         55:analysis.findCalTones,
@@ -71,7 +67,9 @@ def _com():
         65:clean_io.cleanBoardDroneDirs,
         70:alcove_base.timestreamOn,
         71:alcove_base.userPacketInfo,
-        80:alcove_base.setAtten
+        80:alcove_base.setAtten2024,
+        81:alcove_base.setAtten2025,
+        82:alcove_base.getAtten,
     }
 
 

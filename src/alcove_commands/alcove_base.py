@@ -420,7 +420,7 @@ def _setNCLO2(chan, lofreq):
 
 # ============================================================================ #
 # _setAtten
-def _setAtten(chan, direction, attenuation):
+def _setAtten(chan, direction, attenuation, v2025=True):
     """Sets the attenuation for a specified channel and direction.
 
     chan: The channel number (1-4) to configure.
@@ -428,7 +428,10 @@ def _setAtten(chan, direction, attenuation):
     attenuation: The desired attenuation level in dB (float).
     """
 
-    from alcove_commands.transceiver_serialdriver import Transceiver
+    if v2025:
+        from alcove_commands.transceiver_serialdriver import Primecamfe as D
+    else:
+        from alcove_commands.transceiver_serialdriver import Transceiver as D
 
     try:
         chan = int(chan)
@@ -436,10 +439,31 @@ def _setAtten(chan, direction, attenuation):
 
         atten_id = (chan - 1) + {'drive':0, 'sense':4}[direction]
 
-        Transceiver("/dev/ttyACM0").set_atten(atten_id, attenuation)
+        D("/dev/ttyACM0").set_atten(atten_id, attenuation)
+        # '/dev/ttyUSB0'
 
     except Exception as e:
         print(f"_setAtten Error: {e}")
+
+
+# ============================================================================ #
+# _getAtten
+def _getAtten(chan, direction):
+    """Gets the attenuation for a specified channel and direction.
+    Use with 2025 driver.
+    """
+
+    from alcove_commands.transceiver_serialdriver import Primecamfe as D
+
+    try:
+        chan = int(chan)
+
+        atten_id = (chan - 1) + {'drive':0, 'sense':4}[direction]
+
+        return D("/dev/ttyACM0").get_atten(atten_id)
+        
+    except Exception as e:
+        print(f"_getAtten Error: {e}")
 
 
 # ============================================================================ #
@@ -511,14 +535,42 @@ def modifyCustomCombAmps(factor=1):
     io.save(io.file.a_tones_comb_cust, amps)
 
 # ============================================================================ #
-# setAttenuator
-def setAtten(direction, atten):
+# setAtten2025
+def setAtten2025(direction, atten, v2025=True):
+    """Set RF attenuator values on Arduino controlled RF gain board.
+
+    direction: (str) "sense" or "drive".
+    atten: (float) Attenuation value in dB, {0,31.75}.
     """
-    Set RF attenuator values on Arduino controlled RF gain board 
-    direction - string "sense" or "drive"
-    atten - float attenuation value in dB min 0 max 31.75
-    """
+
     chan = cfg_b.drid
     atten = float(atten)
     direction = str(direction)
-    return _setAtten(chan,direction,atten)
+
+    return _setAtten(chan, direction, atten, v2025=v2025)
+
+
+# ============================================================================ #
+# setAtten2024
+def setAtten2024(direction, atten):
+    return setAtten2025(direction, atten, v2025=False)
+
+
+# ============================================================================ #
+# getAtten
+def getAtten(direction):
+    """Get RF attenuator values on Arduino controlled RF gain board.
+    
+    direction: (str) "sense" or "drive".
+
+    Return: atten: (float) Attenuation value in dB.
+    """
+
+    chan = cfg_b.drid
+    direction = str(direction)
+
+    atten = _getAtten(chan, direction)
+
+    print(f"getAtten: direction={direction}, atten={atten}")
+
+    return atten
