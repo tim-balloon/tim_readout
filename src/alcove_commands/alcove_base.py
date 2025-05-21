@@ -439,8 +439,7 @@ def _setAtten(chan, direction, attenuation, v2025=True):
 
         atten_id = (chan - 1) + {'drive':0, 'sense':4}[direction]
 
-        D("/dev/ttyACM0").set_atten(atten_id, attenuation)
-        # '/dev/ttyUSB0'
+        D(cfg_b.atten_device).set_atten(atten_id, attenuation)
 
     except Exception as e:
         print(f"_setAtten Error: {e}")
@@ -460,7 +459,7 @@ def _getAtten(chan, direction):
 
         atten_id = (chan - 1) + {'drive':0, 'sense':4}[direction]
 
-        return D("/dev/ttyACM0").get_atten(atten_id)
+        return D(cfg_b.atten_device).get_atten(atten_id)
         
     except Exception as e:
         print(f"_getAtten Error: {e}")
@@ -475,14 +474,10 @@ def setFineNCLO(df_lo):
     df_lo: Center frequency shift, in [MHz].
     """
 
-    # import numpy as np
-
     chan = cfg_b.drid
     df_lo = float(df_lo)
+    
     return _setNCLO2(chan, df_lo)
-    # TODO: modify f_center to reflect this fine adjustment
-    # io.save(io.file.f_center_vna, f_lo*1e6)
-
 
 
 # ============================================================================ #

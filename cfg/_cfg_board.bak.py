@@ -71,6 +71,11 @@ target_chan_bw = 1 # target sweep channel bandwidth [MHz]
 
 
 # ============================================================================ #
+# attenuator settings
+atten_device = '/dev/ttyACM0' # '/dev/ttyUSB0'
+    
+
+# ============================================================================ #
 # house keeping feeds
 interval_feeds = 60 # s
 
