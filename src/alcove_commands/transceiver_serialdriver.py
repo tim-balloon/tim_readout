@@ -1,10 +1,7 @@
-# import serial.tools.list_ports
 import serial
-import time
 import struct
 
-_ASSERTIONS = True
-_ENABLE_DEBUG = False
+import time
 
 
 class Primecamfe:
@@ -18,6 +15,8 @@ class Primecamfe:
         :param comport: Comport or path that the attenuator is connected to.
             eg: COM13 or /dev/ttyACM0  (users can create permanent simlinks to this dev using udevrules in Ubuntu)
         """
+        self._ASSERTIONS = True
+        self._ENABLE_DEBUG = False
         self.connected = False
         try:
             self.ser = serial.Serial(comport, baudrate=115200, timeout=5)
@@ -47,7 +46,7 @@ class Primecamfe:
         """
         if not self.ser.is_open:
             raise ConnectionError("Not connected to Primecam RF Frontend Amp Controller")
-        if _ASSERTIONS:
+        if self._ASSERTIONS:
             assert value >= 0 and value <= 31.75, "Attenuation out of range (0 through 31.75)"
             assert addr >= 0 and addr <= 7, "Address out of range (0 through 7)"
         atten = int(round(value*4))&0xFF
@@ -57,17 +56,17 @@ class Primecamfe:
         self.ser.write(data)
         response = self.ser.read_until(b'\n')
         if response.strip() == b'OK':
-            if _ENABLE_DEBUG:
+            if self._ENABLE_DEBUG:
                 return True, "OK", atten
             else:
                 return True
         else:
-            print(response) if _ENABLE_DEBUG else None
+            print(response) if self._ENABLE_DEBUG else None
             msg = response.decode().strip('\n').strip('\r')
             if len(msg) == 0:
                 print("Error, device did not respond")
             else:
-                return (False, msg) if _ENABLE_DEBUG else False
+                return (False, msg) if self._ENABLE_DEBUG else False
 
 
     def get_atten(self, addr:int) -> float:
@@ -78,7 +77,7 @@ class Primecamfe:
         """
         if not self.ser.is_open:
             raise ConnectionError("Couldn't open serial port.")
-        if _ASSERTIONS:
+        if self._ASSERTIONS:
             assert addr >= 0 and addr <= 7, "Address out of range (0 through 7)"
         self.ser.write(b"get_atten\n")
         data = struct.pack('<B', addr)
@@ -108,6 +107,8 @@ class Transceiver:
     """
 
     def __init__(self, comport) -> None:
+        self._ASSERTIONS = True
+        self._ENABLE_DEBUG = False
         self.ser = serial.Serial(comport, baudrate=115200, timeout=5)
         time.sleep(1.0)
         if self.ser.is_open:
@@ -125,7 +126,7 @@ class Transceiver:
     def set_atten(self, addr:int, value : float):
         if not self.ser.is_open:
             raise ConnectionError("Not connected to IF SLICE")
-        if _ASSERTIONS:
+        if self._ASSERTIONS:
             assert value >= 0 and value <= 31.75, "Attenuation out of range (0 through 31.75)"
             assert addr >= 0 and addr <= 7, "Address out of range (0 through 7)"
         atten = int(round(value*4))&0xFF
@@ -135,7 +136,7 @@ class Transceiver:
         self.ser.write(data)
         response = self.ser.read_until(b'\n')
         if response.strip() == b'OK':
-            if _ENABLE_DEBUG:
+            if self._ENABLE_DEBUG:
                 return True, "OK", atten
             else:
                 return True, "OK"
