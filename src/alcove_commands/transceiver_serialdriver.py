@@ -1,4 +1,5 @@
-import serial.tools.list_ports
+# import serial.tools.list_ports
+import serial
 import time
 import struct
 
