@@ -113,18 +113,16 @@ def loopbackCapture():
 
     print("Running loopback capture...")
 
-    # bid = 1
-    # drid = 1
-
-    packet_per_second = 488 # 512e6/2**20
-    # t_obs = 60*60 # 1 hour - too much for memory
-    t_obs = 60 # 1 min: ~1 GB
+    # packet_per_second = 488 # 512e6/2**20
+    packet_per_second = 976
+    # t_obs = 60 # s, ~1 GB @ 488 Hz
+    t_obs = 30 # s, ~1 GB @ 976 Hz
     N_packets = 4*packet_per_second*t_obs
     # N_packets = 4096*4 # 4096 samples ~ 8.4 s
     # N_packets = 10
 
     # _sendCom(bid, drid, "setNCLO", 600)        # set LO
-    # _sendComAll("writeNewVnaComb")     # gen. tone comb
+    _sendComAll("writeNewVnaComb")     # gen. tone comb
     _sendComAll("timestreamOn", 1)     # start streaming
 
     start = time.time()
@@ -163,7 +161,8 @@ def loopbackCaptureLong():
     t_obs_per_loop = 15 # s; ~100 MB/s memory usage
     # t_obs=1800, t_obs_per_loop=15 -> ~2 GB memory, ~25%
 
-    sample_rate = 488 # 512e6/2**20
+    # sample_rate = 488 # 512e6/2**20
+    sample_rate = 976
     num_drones = 4
     packets_per_s = sample_rate*num_drones
     N_packets = packets_per_s*t_obs
@@ -171,7 +170,6 @@ def loopbackCaptureLong():
 
     msg = f"Running long loopback capture ({t_obs} s; {N_packets} packets):"
 
-    _sendComAll("startChains")
     _sendComAll("writeNewVnaComb")
 
     _sendComAll("timestreamOn", 1)
