@@ -113,8 +113,8 @@ def loopbackCapture():
 
     print("Running loopback capture...")
 
-    # packet_per_second = 488 # 512e6/2**20
-    packet_per_second = 976
+    packet_per_second = 488 # 512e6/2**20
+    # packet_per_second = 976
     # t_obs = 60 # s, ~1 GB @ 488 Hz
     t_obs = 30 # s, ~1 GB @ 976 Hz
     N_packets = 4*packet_per_second*t_obs
