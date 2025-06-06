@@ -317,11 +317,11 @@ def listenMode(r, p, chan_subs, command_queue, interval_feeds):
                 print(f"Redis connection error: {e}, no redundant hosts available.")
                 raise e  # Raise the error
             
-            print(f"Redis connection error: {e}. Retrying with next host...")
             stop_event.set()  # Signal threads to stop
             r, p = connectRedis(set_client_name=True)  
             # Reconnect to Redis, function does not return till new host is found
             
+            print(f"Reconnected, restarting threads...")
             stop_event.clear()  # Clear the stop event to allow threads to run again
             threading.Thread(
                 target=_loopUpdateFeeds, args=(r, interval_feeds, stop_event), daemon=True
