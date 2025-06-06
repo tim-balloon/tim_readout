@@ -64,7 +64,9 @@ def timestreamOn(on=True):
     # input parameter casting
     on = str(on) in {True, 1, '1', 'True', 'true'}
 
-    udp_control = cfg_b.firmware.gpio_udp_info_control
+    if not cfg_b.test_mode:
+        print("??? Why are you calling timestreamOn in test mode??? There is no UDP sender, duh!")
+        udp_control = cfg_b.firmware.gpio_udp_info_control
     
     # current drone channel
     chan = cfg_b.drid
@@ -76,7 +78,8 @@ def timestreamOn(on=True):
     reg_value = val << ((chan - 1) * 2)
 
     # Write the new register value
-    udp_control.write(0x00, reg_value)
+    if not cfg_b.test_mode:
+        udp_control.write(0x00, reg_value)
 
 
 # ============================================================================ #
@@ -97,7 +100,9 @@ def userPacketInfo(data):
     data = 0 if data is None else data # fails to 0
     data = data & 0xFFFF # ensure data is 16 bits
 
-    udp_control = cfg_b.firmware.gpio_udp_info_control
+    if not cfg_b.test_mode:
+        print("??? reminder: there is no UDP sender! ???")
+        udp_control = cfg_b.firmware.gpio_udp_info_control
 
     # current drone channel
     chan = cfg_b.drid
@@ -108,9 +113,10 @@ def userPacketInfo(data):
     val = ((chan-1)<<drone_shift) | data
 
     # Write to tmp reg then trigger write to final reg
-    udp_control.write(0x08, val)
-    udp_control.write(0x08, (1<<edge_trigger) | val)  # edge trigger
-    udp_control.write(0x08, val)
+    if not cfg_b.test_mode:
+        udp_control.write(0x08, val)
+        udp_control.write(0x08, (1<<edge_trigger) | val)  # edge trigger
+        udp_control.write(0x08, val)
 
 
 # ============================================================================ #
@@ -127,7 +133,8 @@ def writeChannelCount(num_chans):
     num_chans = 0 if num_chans is None else num_chans # fails to 0
     num_chans = num_chans & 0xFFFF # ensure data is 16 bits
 
-    udp_control = cfg_b.firmware.gpio_udp_info_control
+    if not cfg_b.test_mode:
+        udp_control = cfg_b.firmware.gpio_udp_info_control
 
     # current drone channel
     chan = cfg_b.drid
@@ -139,9 +146,10 @@ def writeChannelCount(num_chans):
     val = (1<<count_shift) | ((chan-1)<<drone_shift) | num_chans
 
     # Write to tmp reg then trigger write to final reg
-    udp_control.write(0x08, val)
-    udp_control.write(0x08, (1<<edge_trigger) | val)  # edge trigger
-    udp_control.write(0x08, val)
+    if not cfg_b.test_mode:
+        udp_control.write(0x08, val)
+        udp_control.write(0x08, (1<<edge_trigger) | val)  # edge trigger
+        udp_control.write(0x08, val)
 
 
 # ============================================================================ #
@@ -198,6 +206,12 @@ def generateWaveDdr4(freqs, amps, phis):
     # Efficiently initialize dphi
     dphi = np.zeros(fft_len, dtype=np.float64)
     dphi[:len(dphi0)] = dphi0
+    
+    if cfg_b.test_mode:
+        # in test mode, write generated waveform to a file
+        io.save(io.file.waveform, x)
+        io.save(io.file.dphi, dphi)
+        io.save(io.file.freqs_act, freqs_actual)
 
     return x, dphi, freqs_actual
 
@@ -376,7 +390,8 @@ def setNCLO(f_lo):
 
     chan = cfg_b.drid
     f_lo = int(f_lo)
-    _setNCLO(chan, f_lo)
+    if not cfg_b.test_mode:
+        _setNCLO(chan, f_lo)
     io.save(io.file.f_center_vna, f_lo*1e6)
 
 

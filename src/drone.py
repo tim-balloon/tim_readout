@@ -62,7 +62,9 @@ def main():
     # connect to Redis server and establish connection objects
     r, p = connectRedis(set_client_name=True)
 
-    print(f"Drone {cfg_b.bid}.{cfg_b.drid} is running...")    
+    print(f"Drone {cfg_b.bid}.{cfg_b.drid} is running...") 
+    if cfg_b.test_mode:
+        print("RUNNING IN TEST MODE, NO FIRMWARE LOADED OR EXECUTED!!!!!!")
 
     # run loop
     command_queue = queue.Queue()
@@ -212,6 +214,8 @@ def connectRedis(set_client_name=False):
     '''
     if not type(cfg_b.host) is list:
         hosts = [cfg_b.host]  # Ensure host is a list for iteration
+    else:
+        hosts = cfg_b.host
     
     host_found = False
     while not host_found:
@@ -270,7 +274,8 @@ def _loopUpdateFeeds(r, interval, stop_event=None):
             time.sleep(interval)
 
         except Exception as e:
-            print(f"ERROR in drone.py._loopUpdateFeeds: {e}")
+            if not cfg_b.test_mode:
+                print(f"ERROR in drone.py._loopUpdateFeeds: {e}")
             time.sleep(5)  # Prevent crashing loop from overloading CPU
 
 
