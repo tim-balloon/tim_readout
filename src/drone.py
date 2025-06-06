@@ -215,7 +215,7 @@ def connectRedis(set_client_name=False):
     
     host_found = False
     while not host_found:
-        for host in cfg_b.host:
+        for host in hosts:
             try:
                 r = redis.Redis(host=host, port=cfg_b.port, db=cfg_b.db, password=cfg_b.pw, socket_connect_timeout=2)
                 p = r.pubsub()
