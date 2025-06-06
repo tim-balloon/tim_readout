@@ -3,6 +3,8 @@
 # Board configuration file.
 # James Burgoyne jburgoyne@phas.ubc.ca 
 # CCAT/FYST 2023  
+# Edited by: Shubh Agrawal shubh@sas.upenn.edu 
+# for TIM 20245
 # ============================================================================ #
 
 
@@ -17,7 +19,7 @@ bid = 1    # should match physical id on board
 log_path         = '../logs/board.log'
 log_MB           = 10  # size of log files
 log_backup_count = 5   # number of log files
-
+print_traceback = True  # set to True to print traceback on error
 
 # ============================================================================ #
 # Firmware
@@ -26,8 +28,9 @@ firmware_file = 'init/tetra_v13p11.xsa'
 
 # ============================================================================ #
 # redis server configuration
-#host = 'localhost'
-host = '192.168.2.81'
+# host = 'localhost'
+# host = '192.168.2.81'
+host = ['localhost', '192.168.2.81']  # redundant hosts
 port = 6379
 db   = 0
 pw   = 'foobared'
