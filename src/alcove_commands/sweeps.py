@@ -173,7 +173,7 @@ def _sweep(chan, f_center, freqs, N_steps, chan_bandwidth=None, N_accums=5):
 
 # ============================================================================ #
 # vnaSweep
-def vnaSweep(sweep_steps=None):
+def vnaSweep(sweep_steps=None, sweep_accums=None):
     """Perform a stepped frequency sweep with current comb, save as vna sweep.
 
     sweep_steps: (int) Number of steps per tone in the sweep.
@@ -192,10 +192,16 @@ def vnaSweep(sweep_steps=None):
         sweep_steps = int(sweep_steps)
     except:  # fallback to config value
         sweep_steps = cfg_b.sweep_steps
+        
+    # number of sweep accumulations
+    try:     # attempt to use input
+        sweep_accums = int(sweep_accums)
+    except:  # fallback to config value
+        sweep_accums = cfg_b.sweep_accums
 
     S21 = np.array(_sweep( # =(f,Z)
         chan, f_center/1e6, freqs_bb, sweep_steps, 
-        N_accums=cfg_b.sweep_accums))
+        N_accums=sweep_accums))
 
     # S21 = np.array(_sweep(chan, f_center/1e6, freqs_bb,cfg_b.sweep_steps, N_accums=cfg_b.sweep_accums)) # f, Z
 
@@ -231,7 +237,7 @@ def vnaSweepFull(f_center, N_steps=500):
 
 # ============================================================================ #
 # targetSweep
-def targetSweep(chan_bw=None, sweep_steps=None):
+def targetSweep(chan_bw=None, sweep_steps=None, sweep_accums=None):
     '''Perform a stepped freq. sweep with current comb, save as target sweep.
 
     chan_bw: (float) Bandwidth swept around each tone.
@@ -260,10 +266,15 @@ def targetSweep(chan_bw=None, sweep_steps=None):
         chan_bw = float(chan_bw)
     except:  # fallback to config value
         chan_bw = cfg_b.target_chan_bw
+        
+    try:     # attempt to use input
+        sweep_accums = int(sweep_accums)
+    except:  # fallback to config value
+        sweep_accums = cfg_b.sweep_accums
     
     S21 = np.array(_sweep(
         chan, f_center/1e6, freqs_bb, sweep_steps, 
-        chan_bandwidth=chan_bw, N_accums=cfg_b.sweep_accums)) 
+        chan_bandwidth=chan_bw, N_accums=sweep_accums)) 
 
     io.save(io.file.s21_targ, S21)
 

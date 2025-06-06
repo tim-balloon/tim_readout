@@ -516,9 +516,7 @@ class ReadoutAgent:
         """writeCombFromCustomList()
 
         **Task** - Write the comb from custom tone files:
-            alcove_commands/custom_freqs.npy
-            alcove_commands/custom_amps.npy
-            alcove_commands/custom_phis.npy
+            drone-dir/drone_id/custom_comb
 
         Args
         -------
@@ -610,9 +608,7 @@ class ReadoutAgent:
         """writeTargCombFromCustomList()
 
         **Task** - Write the target comb from custom tone files:
-            alcove_commands/custom_freqs.npy
-            alcove_commands/custom_amps.npy
-            alcove_commands/custom_phis.npy
+            drone-dir/drone_id/custom_comb
 
         Args
         -------
