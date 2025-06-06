@@ -2,7 +2,9 @@
 # drone.py
 # Board side Redis interface script.
 # James Burgoyne jburgoyne@phas.ubc.ca
-# CCAT/FYST 2024 
+# CCAT/FYST 2024
+# Edited by: Shubh Agrawal shubh@sas.upenn.edu 
+# for TIM 20245
 # ============================================================================ #
 
 
@@ -58,8 +60,7 @@ def main():
     _loadFirmware()
 
     # connect to Redis server and establish connection objects
-    r,p = connectRedis()
-    r.client_setname(f'drone_{cfg_b.bid}.{cfg_b.drid}')
+    r, p = connectRedis(set_client_name=True)
 
     print(f"Drone {cfg_b.bid}.{cfg_b.drid} is running...")    
 
@@ -204,27 +205,43 @@ def _loadFirmware():
 
 # ============================================================================ #
 # connectRedis
-def connectRedis():
-    '''connect to redis server'''
-    r = redis.Redis(host=cfg_b.host, port=cfg_b.port, db=cfg_b.db, password=cfg_b.pw)
-    p = r.pubsub()
-
-    # check for connection
-    try:
-        r.ping()
-    except redis.exceptions.ConnectionError as e:
-        print(f"Redis connection error: {e}")
+def connectRedis(set_client_name=False):
+    '''
+    connect to redis server
+    tries to iterate through all hosts in cfg_b.host
+    '''
+    if not type(cfg_b.host) is list:
+        hosts = [cfg_b.host]  # Ensure host is a list for iteration
+    
+    host_found = False
+    while not host_found:
+        for host in cfg_b.host:
+            try:
+                r = redis.Redis(host=host, port=cfg_b.port, db=cfg_b.db, password=cfg_b.pw, socket_connect_timeout=2)
+                p = r.pubsub()
+                r.ping()
+                if set_client_name:
+                    r.client_setname(f'drone_{cfg_b.bid}.{cfg_b.drid}')
+                host_found = True
+                print(f"Connected to Redis host: {host}")
+                break  # Exit loop if connection is successful
+            except redis.exceptions.ConnectionError as e:
+                print(f"Failed to connect to Redis host: {host}, error: {e}")
+                continue
+            except redis.exceptions.TimeoutError as e:
+                print(f"Redis connection timeout: {e} for host {host}")
+                continue
 
     return r, p
 
 
 # ============================================================================ #
 # _loopExecuteCommands
-def _loopExecuteCommands(r, command_queue):
+def _loopExecuteCommands(r, command_queue, stop_event=True):
     '''Loop to listen for and sequentially execute commands.
     '''
 
-    while True:
+    while stop_event is None or not stop_event.is_set():
 
         chan_str, payload = command_queue.get()  # Get next command from queue
         try:
@@ -240,11 +257,11 @@ def _loopExecuteCommands(r, command_queue):
 
 # ============================================================================ #
 # _loopUpdateFeeds
-def _loopUpdateFeeds(r, interval):
+def _loopUpdateFeeds(r, interval, stop_event=None):
     """Loop to update feeds.
     """
 
-    while True:
+    while stop_event is None or not stop_event.is_set():
 
         try:
             feeds.setFeedSpc(r, interval)   # free disk space
@@ -263,33 +280,55 @@ def listenMode(r, p, chan_subs, command_queue, interval_feeds):
     '''
     '''
 
+    stop_event = threading.Event() if type(cfg_b.host) is list else None
+    # If multiple Redis hosts are specified, stop_event is used to signal threads to stop
+    
     # Start feeds thread
     threading.Thread(
-        target=_loopUpdateFeeds, args=(r,interval_feeds), daemon=True
+        target=_loopUpdateFeeds, args=(r,interval_feeds,stop_event), daemon=True
         ).start()
 
     # Start commands thread
     threading.Thread(
-        target=_loopExecuteCommands, args=(r,command_queue), daemon=True
+        target=_loopExecuteCommands, args=(r,command_queue,stop_event), daemon=True
         ).start()
 
     # Command loop: listens for messages and adds them to the queue
-    p.psubscribe(chan_subs)  # Subscribe to channels
-    last_chan_str = ''
-    for new_message in p.listen():
-        if new_message['type'] != 'pmessage':
-            continue  # Ignore non-command messages
+    while True:
+        try:
+            p.psubscribe(chan_subs)  # Subscribe to channels
+            last_chan_str = ''
+            for new_message in p.listen():
+                if new_message['type'] != 'pmessage':
+                    continue  # Ignore non-command messages
 
-        chan_str = new_message['channel'].decode('utf-8')
+                chan_str = new_message['channel'].decode('utf-8')
 
-        if chan_str == last_chan_str: # command unique
-            continue  # Prevent duplicate processing
-        last_chan_str = chan_str
+                if chan_str == last_chan_str: # command unique
+                    continue  # Prevent duplicate processing
+                last_chan_str = chan_str
 
-        payload = new_message['data'].decode('utf-8')
+                payload = new_message['data'].decode('utf-8')
 
-        # Queue the command for execution
-        command_queue.put((chan_str, payload))
+                # Queue the command for execution
+                command_queue.put((chan_str, payload))
+        except redis.exceptions.ConnectionError as e:
+            if not isinstance(cfg_b.host, list):
+                print(f"Redis connection error: {e}, no redundant hosts available.")
+                raise e  # Raise the error
+            
+            print(f"Redis connection error: {e}. Retrying with next host...")
+            stop_event.set()  # Signal threads to stop
+            r, p = connectRedis(set_client_name=True)  
+            # Reconnect to Redis, function does not return till new host is found
+            
+            stop_event.clear()  # Clear the stop event to allow threads to run again
+            threading.Thread(
+                target=_loopUpdateFeeds, args=(r, interval_feeds, stop_event), daemon=True
+                ).start()
+            threading.Thread(
+                target=_loopExecuteCommands, args=(r, command_queue, stop_event), daemon=True
+                ).start()
 
 
 '''
