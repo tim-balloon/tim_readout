@@ -118,7 +118,8 @@ def getFeedTemps(r, handler):
     for bid in set([k.split('_')[1] for k in keyVals.keys()]):
 
         # find keyVals for just this board
-        boardVals = {k:v for k,v in keyVals.items() if f'{pre}_{bid}_' in k}
+        boardVals = {k:v for k,v in keyVals.items() 
+                     if k.startswith(f'{pre}_{bid}_')}
         
         # generate expected dict for handler
         data = {'timestamp': time.time(),
@@ -155,7 +156,8 @@ def getFeedSpc(r, handler):
     for bid in set([k.split('_')[1] for k in keyVals.keys()]):
 
         # find keyVals for just this board
-        boardVals = {k:v for k,v in keyVals.items() if f'{pre}_{bid}_' in k}
+        boardVals = {k:v for k,v in keyVals.items() 
+                     if k.startswith(f'{pre}_{bid}_')}
         
         # generate expected dict for handler
         data = {'timestamp': time.time(),
