@@ -112,15 +112,19 @@ def getFeedTemps(r, handler):
     # convert values from str to floats 
     keyVals = _dictValsToFloats(keyVals)
 
-    data = {
-        'timestamp': time.time(),
-        'block_name': f'{cfg_b.bid}_{cfg_b.drid}', # id
-        'data': keyVals
-    }
+    # loop through all boards
+    for bid in set([k.split('_')[1] for k in keyVals.keys()]):
 
-    print(data)
+        # find keyVals for just this board
+        boardVals = {k:v for k,v in keyVals.items() if f'_{bid}_' in k}
+        
+        # generate expected dict for handler
+        data = {'timestamp': time.time(),
+                'block_name': f'board_{bid}',
+                'data': boardVals}
 
-    handler('drone_temperatures_C', data)
+        # send to provided handler function
+        handler('drone_temperatures_C', data)
 
 
 # ============================================================================ #
@@ -141,13 +145,19 @@ def getFeedSpc(r, handler):
                or (type(keyVals[k]) == str 
                    and keyVals[k].replace('.','',1).isdigit())}
 
-    data = {
-        'timestamp': time.time(),
-        'block_name': f'{cfg_b.bid}_{cfg_b.drid}', # id
-        'data': keyVals
-    }
+    # loop through all boards
+    for bid in set([k.split('_')[1] for k in keyVals.keys()]):
 
-    handler('drone_free_spaces_GB', data)
+        # find keyVals for just this board
+        boardVals = {k:v for k,v in keyVals.items() if f'_{bid}_' in k}
+        
+        # generate expected dict for handler
+        data = {'timestamp': time.time(),
+                'block_name': f'board_{bid}',
+                'data': boardVals}
+
+        # send to provided handler function
+        handler('drone_free_spaces_GB', data)
 
 
 # ============================================================================ #
