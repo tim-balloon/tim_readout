@@ -106,8 +106,10 @@ def getFeedTemps(r, handler):
     pl = programmable logic
     """
 
-    # temps are in keyVals in Redis
-    keyVals = _getKeyValsMatching(r, _wilds()['temp'])
+    pre = _wilds()['temp']
+
+    # in keyVals in Redis
+    keyVals = _getKeyValsMatching(r, pre)
 
     # convert values from str to floats 
     keyVals = _dictValsToFloats(keyVals)
@@ -116,7 +118,7 @@ def getFeedTemps(r, handler):
     for bid in set([k.split('_')[1] for k in keyVals.keys()]):
 
         # find keyVals for just this board
-        boardVals = {k:v for k,v in keyVals.items() if f'_{bid}_' in k}
+        boardVals = {k:v for k,v in keyVals.items() if f'{pre}_{bid}_' in k}
         
         # generate expected dict for handler
         data = {'timestamp': time.time(),
@@ -133,13 +135,17 @@ def getFeedSpc(r, handler):
     """Get all drones feeds: Free space remaining, in GB.
     """
 
-    # space remaining are in keyVals in Redis
-    keyVals = _getKeyValsMatching(r, _wilds()['spc'])
+    pre = _wilds()['spc']
+
+    # in keyVals in Redis
+    keyVals = _getKeyValsMatching(r, pre)
     
     # convert values from str to floats 
     keyVals = _dictValsToFloats(keyVals)
 
-    keyVals = {k: float(keyVals[k]) for k in keyVals 
+    # convert val to float
+    keyVals = {k: float(keyVals[k]) 
+               for k in keyVals 
                if isinstance(keyVals[k], (int, float, str)) 
                and type(keyVals[k]) != str 
                or (type(keyVals[k]) == str 
@@ -149,7 +155,7 @@ def getFeedSpc(r, handler):
     for bid in set([k.split('_')[1] for k in keyVals.keys()]):
 
         # find keyVals for just this board
-        boardVals = {k:v for k,v in keyVals.items() if f'_{bid}_' in k}
+        boardVals = {k:v for k,v in keyVals.items() if f'{pre}_{bid}_' in k}
         
         # generate expected dict for handler
         data = {'timestamp': time.time(),
