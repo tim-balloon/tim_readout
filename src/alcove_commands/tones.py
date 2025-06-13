@@ -59,18 +59,19 @@ def _resetAccumAndSync(chan, freqs):
 
     dsp_regs = _firmware_chan(cfg_b.firmware, cfg_b.drid).dsp_regs_0
 
-    sync_in      = 2**26
-    # accum_rst    = 2**24  # (active rising edge)
-    accum_length = cfg_b.accum_len # e.g. 2**19-1
     fft_shift    = 2**9-1 if len(freqs)<400 else 2**5-1
-
     dsp_regs.write(0x00, fft_shift)
 
-    # compatibility with v <= 13
+    # TODO: the following unused in v>=14?
+    sync_in      = 2**26
+    accum_length = cfg_b.accum_len # e.g. 2**19-1
     dsp_regs.write(0x08, accum_length)
     dsp_regs.write(0x08, accum_length | sync_in)
+
+    # accum_rst    = 2**24  # (active rising edge)
     # dsp_regs.write(0x08, accum_length | accum_rst | sync_in)
 
+    # DDS shift
     dsp_regs.write(0x0c, 180) # 260)
 
 
