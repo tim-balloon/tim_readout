@@ -4,7 +4,7 @@
 # James Burgoyne jburgoyne@phas.ubc.ca 
 # CCAT/FYST 2023  
 # Edited by: Shubh Agrawal shubh@sas.upenn.edu 
-# for TIM 20245
+# for TIM 2025
 # ============================================================================ #
 
 
@@ -20,7 +20,7 @@ log_path         = '../logs/board.log'
 log_MB           = 10  # size of log files
 log_backup_count = 5   # number of log files
 print_traceback = True  # set to True to print traceback on error
-test_mode       = True # disables any firmware calls, useful for testing on local machine
+test_mode       = False # disables any firmware calls, useful for testing on local machine
 
 # ============================================================================ #
 # Firmware
