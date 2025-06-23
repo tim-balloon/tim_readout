@@ -2,6 +2,10 @@
 
 forked from PrimeCam software, described below. This repository is mainly a place to version control book-keeping and logistical changes to the Python interface to the ZCU111 FPGA PL firmware. TIM, being a balloon-borne mission, poses different requirements than PrimeCam from its readout interface to flight code, which is maintained here.
 
+## misc notes:
+1. `sudo rsync -avz tim_readout/ xilinx@192.168.1.99:~/tim_readout/` to copy over repo to ZCU111
+2. set MTU to ~9000 to receive UDP packets from board. Check `ip -d link list` for hardware limits to not set it too high.
+
 #
 #
 #
