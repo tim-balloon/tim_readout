@@ -31,6 +31,7 @@ def main(args=None):
     agent.register_process('feedMonitor', readout.monitorFeeds, readout._stopMonitorFeeds, startup=True)
 
     # queen commands
+    rt('updateMeasurement', readout.updateMeasurement, b=False)
     rt('getKeyValue', readout.getKeyValue)
     rt('setKeyValue', readout.setKeyValue)
     rt('getClientList', readout.getClientList)
@@ -62,7 +63,10 @@ def main(args=None):
     rt('sys_info_v', readout.sys_info_v)
     rt('timestreamOn', readout.timestreamOn)
     rt('userPacketInfo', readout.userPacketInfo)
-    rt('setAtten', readout.setAtten)
+    rt('startChains', readout.startChains)
+    rt('setAtten2024', readout.setAtten2024)
+    rt('setAtten2025', readout.setAtten2025)
+    rt('getAtten', readout.getAtten)
         
     runner.run(agent, auto_reconnect=True)
 
@@ -83,6 +87,10 @@ class ReadoutAgent:
         self.r = None
         self._monitorFeeds = False
 
+        self.measurement_name = None
+        self.measurement_desc = ""
+        self.measurement_start = None
+
         # agent feeds
         self.agent.register_feed(
             'drone_free_spaces_GB',
@@ -95,6 +103,43 @@ class ReadoutAgent:
             record=True,
             agg_params={'frame_length': 10*60}, # 60 s data polling
             buffer_time=5.)  # Allow a small buffer
+
+        self.agent.register_feed(
+            'active_measurement',
+            record=True)
+
+    # ======================================================================== #
+    # .updateMeasurement
+    @ocs_agent.param('measurement_name', default=None, type=str)
+    @ocs_agent.param('measurement_desc', default="", type=str)
+    def updateMeasurement(self, session, params):
+        with self.lock.acquire_timeout(job='updateMeasurement') as acquired:
+            if not acquired:
+                print(f"Lock could not be acquired because it is held by {self.lock.job}.")
+                return False
+
+            if self.measurement_name is None:
+                self.measurement_name = params['measurement_name']
+                self.measurement_desc = params['measurement_desc']
+                self.measurement_start = time.time()
+                return True, f"Starting measurement {self.measurement_name}"
+            else:
+                measurement_name = self.measurement_name
+                measurement_desc = self.measurement_desc
+                self.measurement_name = None
+                self.measurement_desc = ""
+                end_time = time.time()
+
+                message = {'block_name': 'active_measurement', 
+                           'timestamp': self.measurement_start,
+                           'data': {'name': measurement_name, 'desc': measurement_desc,'TimeStart': int(self.measurement_start * 1e3), 'TimeEnd': int(end_time * 1e3)}}
+                
+                self.agent.publish_to_feed('active_measurement', message)
+                self.agent.feeds['active_measurement'].flush_buffer()
+
+        self.updateMeasurement(session, params)
+        return True, f"Finished measurement {measurement_name}"
+
 
     # ======================================================================== #
     # .getKeyValue
@@ -286,7 +331,7 @@ class ReadoutAgent:
                 com_args = f'f_lo={params["f_lo"]}')
         
         # return is a fail message str or number of clients int
-        return True, f"setNCLO: {rtn}"
+        return True, f"setNCLO: Done"
     
 
     # ======================================================================== #
@@ -320,7 +365,7 @@ class ReadoutAgent:
                 com_args = f'f_lo={params["df_lo"]}')
         
         # return is a fail message str or number of clients int
-        return True, f"setFineNCLO: {rtn}"
+        return True, f"setFineNCLO: Done"
 
 
     # ======================================================================== #
@@ -404,7 +449,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"writeTestTone: {rtn}"
+        return True, f"writeTestTone: Done"
 
 
     # ======================================================================== #
@@ -433,7 +478,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"writeNewVnaComb: {rtn}"
+        return True, f"writeNewVnaComb: Done"
 
 
     # ======================================================================== #
@@ -467,7 +512,7 @@ class ReadoutAgent:
                 com_args = f'cal_tones={params["cal_tones"]}')
         
         # return is a fail message str or number of clients int
-        return True, f"writeTargCombFromVnaSweep: {rtn}"
+        return True, f"writeTargCombFromVnaSweep: Done"
     
 
     # ======================================================================== #
@@ -505,7 +550,7 @@ class ReadoutAgent:
                 com_args = f'cal_tones={params["cal_tones"]}, new_amps_and_phis={params["cal_tones"]}')
         
         # return is a fail message str or number of clients int
-        return True, f"writeTargCombFromTargSweep: {rtn}"
+        return True, f"writeTargCombFromTargSweep: Done"
 
 
     # ======================================================================== #
@@ -516,7 +561,9 @@ class ReadoutAgent:
         """writeCombFromCustomList()
 
         **Task** - Write the comb from custom tone files:
-            drone-dir/drone_id/custom_comb
+            alcove_commands/custom_freqs.npy
+            alcove_commands/custom_amps.npy
+            alcove_commands/custom_phis.npy
 
         Args
         -------
@@ -535,7 +582,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"writeCombFromCustomList: {rtn}"
+        return True, f"writeCombFromCustomList: Done"
 
 
     # ======================================================================== #
@@ -564,7 +611,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"createCustomCombFilesFromCurrentComb: {rtn}"
+        return True, f"createCustomCombFilesFromCurrentComb: Done"
 
 
     # ======================================================================== #
@@ -597,7 +644,7 @@ class ReadoutAgent:
                 com_args = f'factor={params["factor"]}')
         
         # return is a fail message str or number of clients int
-        return True, f"modifyCustomCombAmps: {rtn}"
+        return True, f"modifyCustomCombAmps: Done"
 
 
     # ======================================================================== #
@@ -608,7 +655,9 @@ class ReadoutAgent:
         """writeTargCombFromCustomList()
 
         **Task** - Write the target comb from custom tone files:
-            drone-dir/drone_id/custom_comb
+            alcove_commands/custom_freqs.npy
+            alcove_commands/custom_amps.npy
+            alcove_commands/custom_phis.npy
 
         Args
         -------
@@ -627,7 +676,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"writeTargCombFromCustomList: {rtn}"
+        return True, f"writeTargCombFromCustomList: Done"
 
 
     # ======================================================================== #
@@ -662,7 +711,7 @@ class ReadoutAgent:
                 com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
-        return True, f"vnaSweep: {rtn}"
+        return True, f"vnaSweep: Done"
     
 
     # ======================================================================== #
@@ -696,7 +745,7 @@ class ReadoutAgent:
                 com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
-        return True, f"targetSweep: {rtn}"
+        return True, f"targetSweep: Done"
 
 
     # ======================================================================== #
@@ -735,7 +784,7 @@ class ReadoutAgent:
                     silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"customSweep: {rtn}"
+        return True, f"customSweep: Done"
 
 
     # ======================================================================== #
@@ -807,7 +856,7 @@ class ReadoutAgent:
                 com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
-        return True, f"findVnaResonators: {rtn}"
+        return True, f"findVnaResonators: Done"
 
 
     # ======================================================================== #
@@ -842,7 +891,7 @@ class ReadoutAgent:
                 com_args = f'stitch_bw={params["stitch_bw"]}')
         
         # return is a fail message str or number of clients int
-        return True, f"findTargResonators: {rtn}"
+        return True, f"findTargResonators: Done"
 
     # ======================================================================== #
     # .findCalTones
@@ -885,7 +934,7 @@ class ReadoutAgent:
                 com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
-        return True, f"findCalTones: {rtn}"
+        return True, f"findCalTones: Done"
 
 
     # ======================================================================== #
@@ -914,7 +963,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"sys_info: {rtn}"
+        return True, f"sys_info: Done"
     
 
     # ======================================================================== #
@@ -943,7 +992,7 @@ class ReadoutAgent:
                 silent   = params['silent'])
         
         # return is a fail message str or number of clients int
-        return True, f"sys_info_v: {rtn}"
+        return True, f"sys_info_v: Done"
 
 
     # ======================================================================== #
@@ -952,7 +1001,6 @@ class ReadoutAgent:
     @ocs_agent.param('silent', default=False, type=bool)
     @ocs_agent.param('testing', default=True, type=bool)
     @ocs_agent.param('leave_latest', default=True, type=bool)
-    @ocs_agent.param('ftype', default='.npy', type=str)
     @ocs_agent.param('olderThanDate', default=None, type=str)
     @ocs_agent.param('olderThanDaysAgo', default=None, type=str)
     @ocs_agent.param('largerThanMB', default=None, type=str)
@@ -986,7 +1034,7 @@ class ReadoutAgent:
                 print(f'Lock could not be acquired because it is held by {self.lock.job}.')
                 return False
 
-            arg_keys = ['leave_latest', 'ftype', 'testing',
+            arg_keys = ['leave_latest', 'testing',
                         'olderThanDate', 'olderThanDaysAgo', 'largerThanMB']
         
             rtn = _sendAlcoveCommand(
@@ -996,7 +1044,7 @@ class ReadoutAgent:
                 com_args = _buildComArgs(params, arg_keys))
         
         # return is a fail message str or number of clients int
-        return True, f"cleanBoardDroneDirs: {rtn}"
+        return True, f"cleanBoardDroneDirs: Done"
 
 
     # ======================================================================== #
@@ -1029,7 +1077,7 @@ class ReadoutAgent:
                 com_args = f"on={params['on']},")
         
         # return is a fail message str or number of clients int
-        return True, f"timestreamOn: {rtn}"
+        return True, f"timestreamOn: Done"
     
 
     # ======================================================================== #
@@ -1064,17 +1112,45 @@ class ReadoutAgent:
                 com_args = f"data={params['data']}")
             
         # return is a fail message str or number of clients int
-        return True, f"userPacketInfo: {rtn}"
+        return True, f"userPacketInfo: Done"
+    
+    # ======================================================================== #
+    # .startChains
+    @ocs_agent.param('com_to', default=None, type=str)
+    @ocs_agent.param('silent', default=False, type=bool)
+    def startChains(self, session, params):
+        """startChains()
 
+        **Task** - Start timestream chains.
+
+        Args
+        -------
+        com_to: str
+            Drone to send command to in format bid.drid.
+            If None, will send to all drones.
+            Default is None.
+
+        """
+        with self.lock.acquire_timeout(job='startChains') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+            rtn = _sendAlcoveCommand(
+                com_str  = 'startChains', 
+                com_to   = params['com_to'],
+                silent   = params['silent'])
+        
+        # return is a fail message str or number of clients int
+        return True, f"startChains: Done"
 
     # ======================================================================== #
-    # .setAtten
+    # .setAtten2024
     @ocs_agent.param('com_to', default=None, type=str)
     @ocs_agent.param('silent', default=False, type=bool)
     @ocs_agent.param('direction', type=str)
     @ocs_agent.param('atten', type=float)
-    def setAtten(self, session, params):
-        """setAtten()
+    def setAtten2024(self, session, params):
+        """setAtten2024()
 
         **Task** - Set attenuator value on drive/sense gain board.
 
@@ -1090,7 +1166,7 @@ class ReadoutAgent:
             Attenuation value in dB min 0 max 31.75
         """
 
-        with self.lock.acquire_timeout(job='setAtten') as acquired:
+        with self.lock.acquire_timeout(job='setAtten2024') as acquired:
             if not acquired:
                 print(f'Lock could not be acquired because it is held by {self.lock.job}.')
                 return False
@@ -1099,15 +1175,86 @@ class ReadoutAgent:
             atten = params['atten']
 
             rtn = _sendAlcoveCommand(
-                com_str  = 'setAtten', 
+                com_str  = 'setAtten2024', 
                 com_to   = params['com_to'],
                 silent   = params['silent'],
                 com_args = f'direction={direction}, atten={atten},')
         
         # return is a fail message str or number of clients int
-        return True, f"setAtten: {rtn}"
+        return True, f"setAtten2024: Done"
     
+    # ======================================================================== #
+    # .setAtten2025
+    @ocs_agent.param('com_to', default=None, type=str)
+    @ocs_agent.param('silent', default=False, type=bool)
+    @ocs_agent.param('direction', type=str)
+    @ocs_agent.param('atten', type=float)
+    def setAtten2025(self, session, params):
+        """setAtten2025()
 
+        **Task** - Set attenuator value on drive/sense gain board.
+
+        Args
+        -------
+        com_to: str
+            Drone to send command to in format bid.drid.
+            If None, will send to all drones.
+            Default is None.
+        direction: (str)
+            "sense" or "drive"
+        atten: (float)
+            Attenuation value in dB min 0 max 31.75
+        """
+
+        with self.lock.acquire_timeout(job='setAtten2025') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+
+            direction = params['direction']
+            atten = params['atten']
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'setAtten2025', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'direction={direction}, atten={atten},')
+        
+        # return is a fail message str or number of clients int
+        return True, f"setAtten2025: Done"
+
+    # ======================================================================== #
+    # .getAtten
+    @ocs_agent.param('com_to', default=None, type=str)
+    @ocs_agent.param('silent', default=False, type=bool)
+    @ocs_agent.param('direction', type=str)
+    def getAtten(self, session, params):
+        """getAtten()
+
+        **Task** - Get RF attenuator values on Arduino controlled RF gain board.
+
+        Args
+        -------
+        direction: (str) "sense" or "drive".
+
+        Return: atten: (float) Attenuation value in dB.
+        """
+
+        with self.lock.acquire_timeout(job='getAtten') as acquired:
+            if not acquired:
+                print(f'Lock could not be acquired because it is held by {self.lock.job}.')
+                return False
+
+            direction = params['direction']
+
+            rtn = _sendAlcoveCommand(
+                com_str  = 'getAtten', 
+                com_to   = params['com_to'],
+                silent   = params['silent'],
+                com_args = f'direction={direction},')
+        
+        # return is a fail message str or number of clients int
+        return True, f"getAtten: {rtn}"
     # # ======================================================================== #
     # # .vnaSweep
     # @ocs_agent.param('com_to', default=None, type=str)
