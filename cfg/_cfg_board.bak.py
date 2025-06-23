@@ -20,6 +20,7 @@ log_path         = '../logs/board.log'
 log_MB           = 10  # size of log files
 log_backup_count = 5   # number of log files
 print_traceback = True  # set to True to print traceback on error
+test_mode       = True # disables any firmware calls, useful for testing on local machine
 
 # ============================================================================ #
 # Firmware
@@ -28,12 +29,12 @@ firmware_file = 'init/tetra_v13p11.xsa'
 
 # ============================================================================ #
 # redis server configuration
-# host = 'localhost'
 # host = '192.168.2.81'
-host = ['localhost', '192.168.2.81']  # redundant hosts
+# host = 'localhost'
+host = ['192.168.1.3', '192.168.1.4', '192.168.1.223']  # redundant hosts
 port = 6379
 db   = 0
-pw   = 'foobared'
+pw   = None
 
 
 # ============================================================================ #
