@@ -65,8 +65,9 @@ def timestreamOn(on=True):
     on = str(on) in {True, 1, '1', 'True', 'true'}
 
     if not cfg_b.test_mode:
-        print("??? Why are you calling timestreamOn in test mode??? There is no UDP sender, duh!")
         udp_control = cfg_b.firmware.gpio_udp_info_control
+    else:
+        print("??? Why are you calling timestreamOn in test mode??? There is no UDP sender, duh!")
     
     # current drone channel
     chan = cfg_b.drid
