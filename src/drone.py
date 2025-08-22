@@ -4,7 +4,7 @@
 # James Burgoyne jburgoyne@phas.ubc.ca
 # CCAT/FYST 2024
 # Edited by: Shubh Agrawal shubh@sas.upenn.edu 
-# for TIM 20245
+# for TIM 2025
 # ============================================================================ #
 
 
@@ -241,7 +241,7 @@ def connectRedis(set_client_name=False):
 
 # ============================================================================ #
 # _loopExecuteCommands
-def _loopExecuteCommands(r, command_queue, stop_event=True):
+def _loopExecuteCommands(r, command_queue, stop_event=None):
     '''Loop to listen for and sequentially execute commands.
     '''
 

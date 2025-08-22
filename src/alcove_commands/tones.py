@@ -154,9 +154,9 @@ def _loadDdr4(chan, wave_real, wave_imag, dphi):
 
     return
 
-def genPhis(freqs, amps, amp_max=(2**15-1), loop_max=100):
+def genPhis(freqs, amps, amp_max=(2**15-1), phase_trials=20):
     """Generate lists of phases for given tone amplitudes.
-    freqs: 1D float array of resonator frequencies.
+    freqs: 1D float array of resonator frequencies. in Hz
     amps: 1D float array of tone amplitudes.
     amp_max: Maximum allowable time stream amplitude.
     """
@@ -175,7 +175,7 @@ def genPhis(freqs, amps, amp_max=(2**15-1), loop_max=100):
 
         amp_peak = np.max(np.abs(x.real + 1j*x.imag))
 
-        if (amp_peak < amp_max) or (loop > loop_max):
+        if (amp_peak < amp_max) or (loop > phase_trials):
             break
 
     return phis

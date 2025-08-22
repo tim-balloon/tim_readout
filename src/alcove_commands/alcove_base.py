@@ -102,8 +102,9 @@ def userPacketInfo(data):
     data = data & 0xFFFF # ensure data is 16 bits
 
     if not cfg_b.test_mode:
-        print("??? reminder: there is no UDP sender! ???")
         udp_control = cfg_b.firmware.gpio_udp_info_control
+    else:
+        print("??? reminder: there is no UDP sender! ???")
 
     # current drone channel
     chan = cfg_b.drid
