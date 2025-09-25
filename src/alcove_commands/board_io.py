@@ -225,6 +225,36 @@ class file:
                 'use_timestamp' :True}
     s21_custom = _s21_custom()
 
+# ============================================================================ #
+# Test mode only: Waveform files
+# ============================================================================ #
+
+    class _waveform:
+        def __get__(self, obj, cls):
+            return {
+                'fname'     :'waveform',
+                'file_type' :'npy', 
+                'dname'     :cfg_b.drone_dir+'/test_mode',
+                'use_timestamp' :True}
+    waveform = _waveform()
+
+    class _dphi:
+        def __get__(self, obj, cls):
+            return {
+                'fname'     :'dphi',
+                'file_type' :'npy', 
+                'dname'     :cfg_b.drone_dir+'/test_mode',
+                'use_timestamp' :True}
+    dphi = _dphi()
+    
+    class _freqs_act:
+        def __get__(self, obj, cls):
+            return {
+                'fname'     :'freqs_act',
+                'file_type' :'npy', 
+                'dname'     :cfg_b.drone_dir+'/test_mode',
+                'use_timestamp' :True}
+    freqs_act = _freqs_act()
 
 # ============================================================================ #
 # System Info

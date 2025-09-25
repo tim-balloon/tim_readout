@@ -7,8 +7,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Define paths
-ACTIVATE_SCRIPT="/home/xilinx/primecam_readout/scripts/activate"
-INIT_SCRIPT="/home/xilinx/primecam_readout/init/init.py"
+ACTIVATE_SCRIPT="/home/xilinx/tim_readout/scripts/activate"
+INIT_SCRIPT="/home/xilinx/tim_readout/init/init.py"
 
 # Ensure the activate script exists
 if [ ! -f "$ACTIVATE_SCRIPT" ]; then

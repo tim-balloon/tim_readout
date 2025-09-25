@@ -4,13 +4,13 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/xilinx/primecam_readout/scripts/startup_board.sh
+ExecStart=/home/xilinx/tim_readout/scripts/startup_board.sh
 StandardOutput=journal
 StandardError=journal
 User=root
 Group=root
 RemainAfterExit=true
-WorkingDirectory=/home/xilinx/primecam_readout/scripts
+WorkingDirectory=/home/xilinx/tim_readout/scripts
 
 [Install]
 WantedBy=multi-user.target

@@ -12,7 +12,9 @@
 # ============================================================================ #
 
 
-import logging
+import logging, traceback
+try: from config import board as cfg_b
+except ImportError: cfg_b = None  
 
 import alcove_commands.test_functions as test
 import alcove_commands.board_utilities as utils
@@ -131,6 +133,8 @@ def callCom(key, args, kwargs):
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(e).__name__, e.args)
             ret = message
+            if cfg_b.print_traceback:
+                traceback.print_exc()
 
         if ret is not None:              # default success return is None
             print(f"{com[key].__name__}: {ret}") # monkeypatched to log

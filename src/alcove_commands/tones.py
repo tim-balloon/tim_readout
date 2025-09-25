@@ -154,6 +154,32 @@ def _loadDdr4(chan, wave_real, wave_imag, dphi):
 
     return
 
+def genPhis(freqs, amps, amp_max=(2**15-1), phase_trials=20):
+    """Generate lists of phases for given tone amplitudes.
+    freqs: 1D float array of resonator frequencies. in Hz
+    amps: 1D float array of tone amplitudes.
+    amp_max: Maximum allowable time stream amplitude.
+    """
+
+    import numpy as np
+
+    # randomly generate phases until peak amp is lower than required max
+    N = np.size(amps)
+    loop = 0 # could infinitely loop otherwise
+    while True: # conditional at bottom to act like do-while
+        loop += 1
+
+        phis = np.random.uniform(-np.pi, np.pi, N) # phases
+        x, _, _ = generateWaveDdr4(freqs, amps, phis)
+        x.real, x.imag = x.real.astype("int16"), x.imag.astype("int16")
+
+        amp_peak = np.max(np.abs(x.real + 1j*x.imag))
+
+        if (amp_peak < amp_max) or (loop > phase_trials):
+            break
+
+    return phis
+
 
 # ============================================================================ #
 # genAmpsAndPhis
@@ -241,13 +267,15 @@ def _writeComb(chan, freqs, amps, phi):
      # implemented in tones._writeComb and alcove_base._setNCLO
     wave, dphi, freq_actual = generateWaveDdr4(freqs, amps, phi)
     # write number of channels to 16 bit value in UDP packet
-    writeChannelCount(len(freqs))
+    if not cfg_b.test_mode:
+        writeChannelCount(len(freqs))
     #wave_real, wave_imag = _normWave(wave, max_amp=2**15-1)
     wave_real, wave_imag = wave.real.astype("int16"), wave.imag.astype("int16") 
     _waveAmpTest(wave, max_amp=2**15-1)
-    _loadDdr4(chan, wave_real, wave_imag, dphi)
-    _loadBinList(chan, freq_actual)
-    _resetAccumAndSync(chan, freq_actual)
+    if not cfg_b.test_mode:
+        _loadDdr4(chan, wave_real, wave_imag, dphi)
+        _loadBinList(chan, freq_actual)
+        _resetAccumAndSync(chan, freq_actual)
 
     f_center   = io.load(io.file.f_center_vna) # Hz
     freqs_rf_actual = freq_actual + f_center 
@@ -412,9 +440,7 @@ def writeTargCombFromTargSweep(cal_tones=False, new_amps_and_phis=False):
 # writeTargCombFromCustomList
 def writeTargCombFromCustomList():
     """Write the target comb from the custom tone files:
-    alcove_commands/custom_freqs.npy
-    alcove_commands/custom_amps.npy
-    alcove_commands/custom_phis.npy
+    drone-dir/drone_id/custom_comb
 
     This differs from tones.writeCombFromCustomList only in that it assumes these are resonator frequencies and writes f_res_targ (to be used in a target sweep).
     """
@@ -447,9 +473,7 @@ def writeTargCombFromCustomList():
 # writeCombFromCustomList
 def writeCombFromCustomList():
     """Write the comb from custom tone files:
-    alcove_commands/custom_freqs.npy
-    alcove_commands/custom_amps.npy
-    alcove_commands/custom_phis.npy
+    drone-dir/drone_id/custom_comb
     """
 
     chan = cfg_b.drid
@@ -460,7 +484,7 @@ def writeCombFromCustomList():
     phis = io.load(io.file.p_tones_comb_cust)
 
     freqs_bb = freqs_rf - f_center
-        
+    
     freqs_bb_comb = _writeComb(chan, freqs_bb, amps, phis)
     freqs_rf_comb = freqs_bb_comb + f_center
 
