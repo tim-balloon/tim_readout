@@ -27,6 +27,9 @@ import builtins
 import importlib
 import threading
 import logging.handlers
+import socket
+import struct
+import numpy as np
 
 import alcove
 from config import board as cfg_b
@@ -59,6 +62,8 @@ def main():
     # load firmware to config
     _loadFirmware()
 
+    udp_sock = _makeUDPSocket() if cfg_b.udp_send else None
+
     # connect to Redis server and establish connection objects
     r, p = connectRedis(set_client_name=True)
 
@@ -69,9 +74,7 @@ def main():
     # run loop
     command_queue = queue.Queue()
     listenMode(r, p, chans.subList(cfg_b.bid, cfg_b.drid), 
-               command_queue, cfg_b.interval_feeds)
-
-            
+               command_queue, cfg_b.interval_feeds, udp_sock)
 
 
 # ============================================================================ #
@@ -261,16 +264,17 @@ def _loopExecuteCommands(r, command_queue, stop_event=None):
 
 # ============================================================================ #
 # _loopUpdateFeeds
-def _loopUpdateFeeds(r, interval, stop_event=None):
+def _loopUpdateFeeds(r, interval, stop_event=None, udp_sock=None):
     """Loop to update feeds.
     """
 
     while stop_event is None or not stop_event.is_set():
-
         try:
             feeds.setFeedSpc(r, interval)   # free disk space
             feeds.setFeedTemps(r, interval) # temperatures 
-
+            
+            if udp_sock is not None:
+                feeds._sendToneListUDP(udp_sock)  # UDP tone list feed
             time.sleep(interval)
 
         except Exception as e:
@@ -278,10 +282,28 @@ def _loopUpdateFeeds(r, interval, stop_event=None):
                 print(f"ERROR in drone.py._loopUpdateFeeds: {e}")
             time.sleep(5)  # Prevent crashing loop from overloading CPU
 
+# Add a UDP feed for tone list if in config
+def _makeUDPSocket():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(('', cfg_b.tone_list_port))  # Bind to the port
+
+    mreq = struct.pack("4sl", socket.inet_aton(cfg_b.tone_list_addr), socket.INADDR_ANY)
+    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+    return sock
+
+def _sendToneListUDP(udp_sock):
+    tone_list = [1, 2, 3, 4, 5]  # Example tone list; replace with actual data retrieval
+    if tone_list is None:
+        return
+    data = np.array(tone_list, dtype=np.float32).tobytes()
+    udp_sock.sendto(data, (cfg_b.tone_list_addr, cfg_b.tone_list_port))
+
 
 # ============================================================================ #
 # listenMode
-def listenMode(r, p, chan_subs, command_queue, interval_feeds):
+def listenMode(r, p, chan_subs, command_queue, interval_feeds, udp_sock):
     '''
     '''
 
@@ -290,7 +312,7 @@ def listenMode(r, p, chan_subs, command_queue, interval_feeds):
     
     # Start feeds thread
     threading.Thread(
-        target=_loopUpdateFeeds, args=(r,interval_feeds,stop_event), daemon=True
+        target=_loopUpdateFeeds, args=(r,interval_feeds,stop_event,udp_sock), daemon=True
         ).start()
 
     # Start commands thread

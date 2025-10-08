@@ -83,6 +83,11 @@ atten_device = '/dev/ttyACM0' # '/dev/ttyUSB0'
 # house keeping feeds
 interval_feeds = 60 # s
 
+# =========================================================================== #
+# TIM addition
+udp_send = True  # Enable/disable UDP sending of timestream data
+tone_list_port = 5006  # Port for UDP tone list feed
+tone_list_addr = "235.0.121.151"
 
 
 
