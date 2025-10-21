@@ -274,7 +274,7 @@ def _loopUpdateFeeds(r, interval, stop_event=None, udp_sock=None):
             feeds.setFeedTemps(r, interval) # temperatures 
             
             if udp_sock is not None:
-                feeds._sendToneListUDP(udp_sock)  # UDP tone list feed
+                _sendToneListUDP(udp_sock)  # UDP tone list feed
             time.sleep(interval)
 
         except Exception as e:
@@ -298,6 +298,8 @@ def _sendToneListUDP(udp_sock):
     if tone_list is None:
         return
     data = np.array(tone_list, dtype=np.float32).tobytes()
+    timestamp = time.time_ns()
+    data = timestamp.to_bytes(8, byteorder='big') + data
     udp_sock.sendto(data, (cfg_b.tone_list_addr, cfg_b.tone_list_port))
 
 
