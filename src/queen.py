@@ -58,7 +58,9 @@ def _com():
         # 13:test.targetSweepAndNoiseSweep,
         14:test.loopbackCapture,
         15:test.loopbackCaptureLong,
-        16:test.timestreamMonitorTest
+        16:test.timestreamMonitorTest,
+        20:getJobStatus,
+        21:abortJob,
     }
 
 
@@ -90,7 +92,7 @@ def comNumFromStr(com_str):
 # ============================================================================ #
 #  alcoveCommand
 def alcoveCommand(com_num, bid=None, drid=None, all_boards=False, 
-                  args=None, ret_data=True, list_bid_drids=None):
+                  args=None, ret_data=True, list_bid_drids=None, timeout=None):
     '''Send an alcove command to given board[s].
 
     com_num: (int) Command number.
@@ -172,7 +174,7 @@ def alcoveCommand(com_num, bid=None, drid=None, all_boards=False,
 
     # Listen for a responses
     print(f"Listening for responses... ", end="")
-    resps = _catchAllResponses(p, num_clients)
+    resps = _catchAllResponses(p, num_clients, timeout=timeout)
     print(f"{len(resps)} received. Done.")
 
     return (num_clients, resps)
@@ -337,6 +339,27 @@ def setKeyValue(key, value):
     r,p = _connectRedis()
     r.set(bytes(key, encoding='utf-8'), bytes(value, encoding='utf-8'))   
 
+def getJobStatus(bid=None, drid=None):
+    """
+    GET the job_{bid}.{drid} progress key set by long drone jobs.
+    """
+
+    import json
+    r, p = _connectRedis()
+    v = r.get(f"job_{bid}.{drid}")
+
+    return None if v is None else json.loads(v)
+
+
+def abortJob(bid=None, drid=None):
+    """
+    SET abort signal to a long drone job.
+    """
+
+    r, p = _connectRedis()
+    r.set(f"abort_{bid}.{drid}", "1", ex=3600)  # expires after 3600 sec
+    return f"abort requested for {bid}.{drid}"
+
 
 # ============================================================================ #
 #  getClientList
@@ -430,8 +453,8 @@ def _processCommandReturn(dat):
 
     d = pickle.loads(dat)             # assuming msg is pickled
     
-    if isinstance(dat, str):          # print if string
-        print(dat) 
+    if isinstance(d, str):          # print if string
+        print(d) 
 
     try:
         io.saveWrappedToTmp(d)        # save a wrapped return
@@ -441,7 +464,7 @@ def _processCommandReturn(dat):
 
 # ============================================================================ #
 # _catchAllResponses
-def _catchAllResponses(p, num_clients):
+def _catchAllResponses(p, num_clients, timeout=None):
     """Listen for Redis responses, with a timeout.
 
     p: Redis pubsub object that listens for responses.
@@ -461,19 +484,19 @@ def _catchAllResponses(p, num_clients):
     # listen for new messages in subscribed channels
     # there is no timeout logic 
     # so this will not stop until all replies are received
-    for new_message in p.listen():
-
-        # only care about pmessages
-        if new_message['type'] != 'pmessage':
-            continue 
-
-        # process this return
-        resps.append(new_message)
-        _processCommandReturn(new_message['data'])  # print and save
-
-        # stop when all expected returns received
-        if len(resps) >= num_clients:
+    deadline = None if timeout is None else time.monotonic() + float(timeout)
+    while len(resps) < num_clients:
+        if deadline is not None and time.monotonic() > deadline:
+            print(f"Timeout after {timeout} s: {len(resps)}/{num_clients} responses.")
             break
+        msg = p.get_message(timeout=1.0)
+        if msg is None or msg['type'] != 'pmessage':
+            continue
+        resps.append(msg)
+        _processCommandReturn(msg['data'])
+
+    p.punsubscribe()
+    p.close()
 
     return resps
 

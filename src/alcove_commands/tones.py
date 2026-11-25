@@ -367,6 +367,41 @@ def _writeTargComb(f_center, freqs_rf, amps=None, phis=None, cal_tones=False):
 
     return freqs_rf_actual, amps, phis
 
+def _checkClipped(freqs_bb, amps, phis, max_amp=2**15-1):
+    import numpy as np
+
+    x, _, _ = generateWaveDdr4(freqs_bb, amps, phis)
+    peak = max(np.max(np.abs(x.real)), np.max(np.abs(x.imag)))
+
+    return peak >= max_amp, peak
+
+def writeCombArrays(freqs_rf, amps, phis=None):
+    """
+    Write a comb from RF frequency [Hz] and ampltidue arrays.
+
+    """
+
+    chan = cfg_b.drid
+    f_center = io.load(io.file.f_center_vna)
+    freqs_bb = freqs_rf - f_center
+
+    if phis is None:
+        phis = genPhis(freqs_bb, amps)
+
+    # check for clipping
+    isClipped, peak = _checkClipped(freqs_bb, amps, phis)
+    if isClipped:
+        phis = genPhis(freqs_bb, amps)
+        isClipped, peak = _checkClipped(freqs_bb, amps, phis)
+        if isClipped:
+            raise ValueError(f"Comb clips: peak {peak:.0f}")
+
+    freqs_bb_actual = _writeComb(chan, freqs_bb, amps, phis)
+    freqs_rf_actual = freqs_bb_actual + f_center
+
+    io.save(io.file.f_res_targ, freqs_rf_actual)
+
+    return freqs_rf_actual, amps, phis
 
 # ============================================================================ #
 # writeTargCombFromVnaSweep

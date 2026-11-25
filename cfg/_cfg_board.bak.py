@@ -24,14 +24,14 @@ test_mode       = False # disables any firmware calls, useful for testing on loc
 
 # ============================================================================ #
 # Firmware
-firmware_file = 'init/tetra_v13p11.xsa'
-
+firmware_file = 'init/tetra_v14p1.xsa'
+asu_board = False
 
 # ============================================================================ #
 # redis server configuration
 # host = '192.168.2.81'
 # host = 'localhost'
-host = ['192.168.1.3', '192.168.1.4', '192.168.1.223']  # redundant hosts
+host = ['192.168.1.124', '192.168.1.4', '192.168.1.3', '192.168.1.223', '192.168.1.151']  # redundant hosts
 port = 6379
 db   = 0
 pw   = None
@@ -40,15 +40,25 @@ pw   = None
 # ============================================================================ #
 # PTP interface
 ptp_interface   = "eth0"
-ptp_mac_address = "01:80:C2:00:00:0E"
-ptp_ip_address  = "192.168.2.4"
+ptp_mac_address = "02:0a:35:1d:7b:3c"
+ptp_ip_address  = "192.168.10.1"
 
 
 # ============================================================================ #
 # timestream configuration
 # UDP data ethernet destination
-udp_dest_ip  = '192.168.3.40'
-udp_dest_mac = '34:97:f6:52:c4:bb'
+udp_dest_ip  = '192.168.2.80'
+udp_dest_mac = '6c:1f:f7:d3:5e:4c'
+# per-drone UDP destinations (override udp_dest_ip/udp_dest_mac above; unset -> shared)
+# multicast group per drone (MAC = 01:00:5e + low 23 bits of the group IP)
+udp_dest_ip_1  = '239.255.1.10'
+udp_dest_mac_1 = '01:00:5e:7f:01:0a'
+udp_dest_ip_2  = '239.255.1.11'
+udp_dest_mac_2 = '01:00:5e:7f:01:0b'
+udp_dest_ip_3  = '239.255.1.12'
+udp_dest_mac_3 = '01:00:5e:7f:01:0c'
+udp_dest_ip_4  = '239.255.1.13'
+udp_dest_mac_4 = '01:00:5e:7f:01:0d'
 
 # UDP data ethernet origin, drones 1-4
 udp_ori_ip_1 = '192.168.3.50'
@@ -73,6 +83,18 @@ sweep_steps    = 500 # number of sweep steps
 sweep_accums   = 5   # number of repeats of each sweep (averaging)
 target_chan_bw = 1 # target sweep channel bandwidth [MHz]
 
+# ============================================================================ #
+# power optimization defaults
+opt_ares_min            = 4
+opt_ares_max            = 300
+opt_ares_cal            = 200
+opt_n_iterations        = 10
+opt_fine_bw             = 0.2
+opt_npoints_fine        = 400
+opt_N_accums            = 5
+opt_fres_update_method  = 'spacing'
+opt_stepdown_db         = 1
+opt_qres_default        = 1e5
 
 # ============================================================================ #
 # attenuator settings

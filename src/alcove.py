@@ -22,6 +22,7 @@ import alcove_commands.alcove_base as alcove_base
 import alcove_commands.tones as tones
 import alcove_commands.sweeps as sweeps
 import alcove_commands.analysis as analysis
+import alcove_commands.kid_operations as kid_operations
 # import alcove_commands.board_io as board_io
 import clean_io
 
@@ -72,6 +73,8 @@ def _com():
         80:alcove_base.setAtten2024,
         81:alcove_base.setAtten2025,
         82:alcove_base.getAtten,
+        91:kid_operations.optimizePower,
+        92:kid_operations.fetchJobData,
     }
 
 

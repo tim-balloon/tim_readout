@@ -109,21 +109,33 @@ def getDroneTimestreamPort():
     return 4096
 
 
-def tIP_destination(sep='.', asHex=False):
+def tIP_destination(drid:int=None, sep='.', asHex=False):
     """The UDP timestream destination IP address.
+    Uses udp_dest_ip_<drid> if it is defined in the board config,
+    otherwise falls back to the shared udp_dest_ip.
     """
-    
+
+    ip = getattr(cfg_b, f'udp_dest_ip_{drid}', None) if drid else None
+    if ip is None:
+        ip = cfg_b.udp_dest_ip
+
     if asHex:
-        return strSep(IPtoHex(cfg_b.udp_dest_ip), ':', sep)
-    
-    return strSep(cfg_b.udp_dest_ip, '.', sep)
+        return strSep(IPtoHex(ip), ':', sep)
+
+    return strSep(ip, '.', sep)
 
 
-def mac_destination(sep=':'):
+def mac_destination(drid:int=None, sep=':'):
     """The UDP timestream destination mac address.
+    Uses udp_dest_mac_<drid> if it is defined in the board config,
+    otherwise falls back to the shared udp_dest_mac.
     """
-    
-    return strSep(cfg_b.udp_dest_mac, ':', sep)
+
+    mac = getattr(cfg_b, f'udp_dest_mac_{drid}', None) if drid else None
+    if mac is None:
+        mac = cfg_b.udp_dest_mac
+
+    return strSep(mac, ':', sep)
 
 
 # ============================================================================ #

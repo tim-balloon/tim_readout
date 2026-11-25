@@ -101,6 +101,9 @@ def _setupArgparse():
     parser.add_argument("-s", "--silent", 
         action="store_true", help="Silent command: minimal return.")
 
+    parser.add_argument("-t", "--timeout",
+        type=float, default=None, help="Seoncds to wait for replies (default: wait forever)")
+
     # bid or -q or neither, but not both
     # g1 = parser.add_mutually_exclusive_group(required=False)
     # g1.add_argument("bid", nargs='?',
@@ -144,21 +147,21 @@ def _processCommand(args):
             print(f"Sending drone {bid}.{drid} " \
                   f"command {args.com_num}... ", flush=True)
             ret = queen.alcoveCommand(args.com_num, 
-                bid=bid, drid=drid, args=args.arguments, ret_data=ret_data)
+                bid=bid, drid=drid, args=args.arguments, ret_data=ret_data, timeout=args.timeout)
             
         # targeted board
         elif bid:
             print(f"Sending board {bid} " \
                   f"command {args.com_num}... ", flush=True)
             ret = queen.alcoveCommand(args.com_num, 
-                bid=bid, args=args.arguments, ret_data=ret_data)
+                bid=bid, args=args.arguments, ret_data=ret_data, timeout=args.timeout)
             
         # list of targeted drones
         elif list_bid_drids:
             print(f"Sending list " \
                   f"command {args.com_num}... ", flush=True)
             ret = queen.alcoveCommand(args.com_num, 
-                args=args.arguments, ret_data=ret_data,
+                args=args.arguments, ret_data=ret_data, timeout=args.timeout,
                 list_bid_drids=list_bid_drids)
 
         # all drones
@@ -166,7 +169,7 @@ def _processCommand(args):
             print(f"Processing all boards " \
                   f"command {args.com_num}... ", flush=True)
             ret = queen.alcoveCommand(args.com_num, 
-                all_boards=True, args=args.arguments, ret_data=ret_data)
+                all_boards=True, args=args.arguments, ret_data=ret_data, timeout=args.timeout)
             
         if ret[0] <= 0:
             print(f"WARNING: No drones received this command.")

@@ -152,6 +152,24 @@ class file:
                 'use_timestamp' :True}
     f_cal_tones = _f_cal_tones()
 
+    class _qres_targ:
+        def __get__(self, obj, cls):
+            return {
+                'fname'         :'q_res_targ',
+                'file_type'     :'npy',
+                'dname'         :cfg_b.drone_dir+'/targ',
+                'use_timestamp' : True}
+    q_res_targ = _qres_targ()
+
+    class _f_cal_indices_targ:
+        def __get__(self, obj, cls):
+            return {
+                'fname'         :'f_cal_indices_targ',
+                'file_type'     :'npy',
+                'dname'         :cfg_b.drone_dir+'/targ',
+                'use_timestamp' :True}
+    f_cal_indices_targ = _f_cal_indices_targ()
+    
 
 # ============================================================================ #
 # Current comb

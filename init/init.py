@@ -11,6 +11,7 @@ import xrfclk
 import xrfdc
 
 import os
+import re
 import sys
 import subprocess
 
@@ -35,7 +36,10 @@ try:
     # assuming cfg.firmware_file is a local filename
     firmware_file = os.path.join(cfg_b.dir_root, cfg_b.firmware_file)
     firmware_fname = os.path.splitext(os.path.basename(firmware_file))[0]
-    firmware_V = int(firmware_fname[7:9]) # fragile!
+    # firmware_V = int(firmware_fname[7:9]) # fragile!
+    firmware_fname_parts = re.search(r'_v(\d+)p(\d+)', firmware_fname)
+    firmware_V = int(firmware_fname_parts.group(1)) 
+    firmware_M = int(firmware_fname_parts.group(2))
     firmware = Overlay(firmware_file, ignore_version=True)
 
     clksrc = 409.6 # MHz
@@ -63,13 +67,16 @@ try:
     rf_data_conv = firmware.usp_rf_data_converter_0
 
     # chan: [adc tiles, adc blocks, dac tiles, dac blocks]
-    
-    if firmware_V >= 13:
-        tb_indices = {
-            1: [1,0,1,3], 2: [1,1,1,2], 3: [0,1,1,0], 4: [0,0,1,1]}
-    else:
-        tb_indices = {
-            1: [0,0,1,3], 2: [0,1,1,2], 3: [1,0,1,1], 4: [1,1,1,0]}
+    print(f"ASU port mapping: {cfg_b.asu_board}")
+    tb_indices = {1: [0,0,1,3], 2: [0,1,1,2], 3: [1,0,1,1], 4: [1,1,1,0]}
+    if firmware_V==14 and firmware_M>=2:
+        if cfg_b.asu_board:
+            tb_indices = {1: [1,0,1,3], 2: [1,1,1,2], 3: [0,1,1,0], 4: [0,0,1,1]}
+            # port_mapping = 0b_11_10_00_01_10_11_01_00 # 32012310
+            port_mapping = 0b_00_01_11_10_00_01_11_10 # 01320132
+        else:
+            port_mapping = 0b_11_10_01_00_00_01_10_11 # 32100123
+        firmware.gpio_chan2DC_mapping.write(0x00, port_mapping)
     
     for chan, ii in tb_indices.items():
         adc = rf_data_conv.adc_tiles[ii[0]].blocks[ii[1]]
@@ -110,25 +117,23 @@ try:
     # Ethernet
     # ======================================================================== #
 
-    dest_ip = ip_addr.tIP_destination(sep='', asHex=True)
-    dest_mac = ip_addr.mac_destination(sep='')
     src_ip_1 = ip_addr.tIP_origin(1, sep='', asHex=True)
     src_ip_2 = ip_addr.tIP_origin(2, sep='', asHex=True)
     src_ip_3 = ip_addr.tIP_origin(3, sep='', asHex=True)
     src_ip_4 = ip_addr.tIP_origin(4, sep='', asHex=True)
     src_mac = ip_addr.mac_origin(sep='')
 
-    def ethRegsPortWrite(ethWrapPort, src_ip): 
+    def ethRegsPortWrite(ethWrapPort, src_ip, dest_ip, dest_mac):
         reg = ethWrapPort.eth_regs_0
         reg.write(0x00, int(src_mac[4:], 16))
         reg.write(0x04, (int(dest_mac[-4:], 16)<<16) + int(src_mac[:4], 16))
         reg.write(0x08, int(dest_mac[:-4], 16))
         reg.write(0x0c, int(src_ip, 16))
         reg.write(0x10, int(dest_ip, 16))
-    ethRegsPortWrite(firmware.ethWrapPort0, src_ip_1)
-    ethRegsPortWrite(firmware.ethWrapPort1, src_ip_2)
-    ethRegsPortWrite(firmware.ethWrapPort2, src_ip_3)
-    ethRegsPortWrite(firmware.ethWrapPort3, src_ip_4)
+    ethRegsPortWrite(firmware.ethWrapPort0, src_ip_1, ip_addr.tIP_destination(1, sep='', asHex=True), ip_addr.mac_destination(1, sep=''))
+    ethRegsPortWrite(firmware.ethWrapPort1, src_ip_2, ip_addr.tIP_destination(2, sep='', asHex=True), ip_addr.mac_destination(2, sep=''))
+    ethRegsPortWrite(firmware.ethWrapPort2, src_ip_3, ip_addr.tIP_destination(3, sep='', asHex=True), ip_addr.mac_destination(3, sep=''))
+    ethRegsPortWrite(firmware.ethWrapPort3, src_ip_4, ip_addr.tIP_destination(4, sep='', asHex=True), ip_addr.mac_destination(4, sep=''))
 
 
 
